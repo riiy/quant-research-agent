@@ -21,7 +21,7 @@ Prove the smallest auditable BTC spot daily strategy-discovery → backtest → 
 
 The first real-data/API research loop, report archive, same-implementation numerical reproduction, and independently coded execution reconstruction **all passed**. The bounded 2024 execution audit finished on 2026-11-16 with `INDEPENDENT EXECUTION RECONSTRUCTION PASSED`. **The MVP acceptance goal is met; stop further execution-infrastructure work unless a material error is discovered.**
 
-**Scope of evidence:** same historical CSV, archived JSON summaries, and a separately implemented 2024 execution replay. The original per-trade fills were not recorded, so no direct fill-by-fill reconciliation was possible. Independent source-level market-data verification and reproduction in a separate environment are not claimed. The original experiment did not record its Git commit SHA. None of these results establishes alpha, authorizes simulation, or permits trading.
+**Scope of evidence:** same historical CSV, archived JSON summaries, and a separately implemented 2024 execution replay. The original per-trade fills were not recorded, so no direct fill-by-fill reconciliation was possible. Independent source-level market-data verification is not claimed. Clean-environment reproduction on Ubuntu and macOS was reported by the user; environment versions and raw command logs were not provided. The original experiment did not record its Git commit SHA. None of these results establishes alpha, authorizes simulation, or permits trading.
 
 ## First real experiment (archived)
 
@@ -41,6 +41,7 @@ data_sha256: "89d904a06e5daf3a0cb59ef87562d5b47da0cea786d82eb867bfbe2898f17be5"
 strategy_status: "ARCHIVED_REJECTED_OR_INCONCLUSIVE"
 numerical_reproduction: "PASSED"
 independent_execution_audit: "PASSED_RECONSTRUCTION"
+cross_environment_reproduction: "PASSED_USER_REPORTED_UBUNTU_MACOS"
 mvp_core_loop: "ACCEPTED"
 holdout_evaluated: false
 trading_allowed: false
@@ -71,6 +72,7 @@ The 2024 initial screen rejected the strategy because its net return failed to o
 - Audit output: `runtime/audits/13d17d479477_2024_trade_ledger.csv` (local generated evidence, not included in this Git commit).
 - Terminal evidence: `INDEPENDENT EXECUTION RECONSTRUCTION PASSED` (user-reported from local execution).
 - **Limit:** the original experiment contains summary results, not original per-trade fills. The audit independently reconstructed trades against the same CSV and compared summary metrics; it did not directly compare two independently captured trade ledgers.
+- On 2026-11-16, the user additionally reported successful clean-Python-environment reproduction on **Ubuntu** and **macOS**, with matching results. This is user-reported evidence; independent logs, Python/package versions, exact Git SHAs and hashes of inputs in both environments have not been supplied.
 
 ## Minimum completion evidence
 
@@ -81,7 +83,8 @@ The 2024 initial screen rejected the strategy because its net return failed to o
 5. Saved metrics re-calculated offline with identical data/rules: **PASSED**.
 6. No broker order routing or account simulation permissions: **ENFORCED by MVP scope**.
 7. Independent 2024 trade-event reconstruction, next-open timing, cash and fee identities: **PASSED**.
-8. Full independent market-data and cross-environment verification: **NOT IN SCOPE** for this minimum MVP acceptance.
+8. Clean-environment cross-OS reproduction (Ubuntu and macOS): **PASSED, user-reported** (raw logs and environment manifests not attached).
+9. Independent upstream market-data verification: **NOT IN SCOPE** for this minimum MVP acceptance.
 
 ## Next action and stop condition
 

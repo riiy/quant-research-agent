@@ -55,11 +55,14 @@ Previously stored pre-2025 prices are checked byte-equivalently at the canonical
 
 The request sends Responses API `input` as a **list of user messages**. Official
 OpenAI accepts either a string or an array, but some LiteLLM ChatGPT adapters
-reject strings with `Input must be a list`. This client-side fix addresses
-that request shape only. Older LiteLLM adapters may also silently drop
-`text.format` (structured JSON output); if the response is not valid JSON,
-prefer the official paid OpenAI API endpoint or upgrade/fix the gateway
-instead of weakening the research schema. ChatGPT Plus is not API credit.
+reject strings with `Input must be a list`. The user message also includes
+an explicit five-key candidate contract for gateways that silently drop
+`instructions` or `text.format` (structured output). A response with exactly
+`{"candidate": {...}}` can be safely unwrapped; any other missing or unexpected
+fields fail with key names (never the raw model text). No silent parameter
+defaults, arbitrary field removal, or automatic paid retries are performed.
+If field errors persist, check that the gateway supports Responses structured
+output or use the official paid OpenAI API endpoint. ChatGPT Plus is not API credit.
 
 ### Offline smoke test
 

@@ -76,10 +76,26 @@ def discover(mode: str = "api") -> tuple[Candidate, dict]:
         "breakout: entry integer 20..150 and exit integer 10..80 (exit<entry). "
         "Return the required JSON object. Sources: " + json.dumps(SOURCES, ensure_ascii=False)
     )
+    # Some ChatGPT/LiteLLM adapters ignore Responses' instructions or text.format.
+    # Put the essential field contract into the user message too; never relax validation.
+    user_text = (
+        "Select one hypothesis, articulate its economic rationale and likely failure modes. "
+        "Return ONLY a JSON object with EXACTLY these five top-level keys: "
+        "title (meaningful string, 10..600 chars), "
+        "rationale (economic mechanism and failure modes, 10..600 chars), "
+        "family (one of sma, momentum, breakout), "
+        "params (object with exactly fast and slow for sma, exactly lookback for momentum, "
+        "or exactly entry and exit for breakout), "
+        "source_ids (non-empty array of source IDs from the list below). "
+        "Do not add a candidate wrapper, markdown fences, notes, or extra fields. "
+        "The strategy must obey the integer ranges in the research instructions. "
+        "Available source IDs: " + json.dumps(list(SOURCES)) + ". "
+        "Research instructions and evidence notes: " + prompt
+    )
     body = {
         "model": model, "instructions": prompt,
         "input": [{"role": "user", "content": [{"type": "input_text",
-                 "text": "Select one hypothesis, articulate its economic rationale and likely failure modes."}]}],
+                 "text": user_text}]}],
         "max_output_tokens": 800,
         "text": {"format": {"type": "json_schema", "name": "candidate", "strict": True, "schema": schema}},
     }
@@ -97,6 +113,13 @@ def discover(mode: str = "api") -> tuple[Candidate, dict]:
                  for c in item.get("content", []) if c.get("type") == "output_text"]
     if not fragments:
         raise RuntimeError("No JSON response from model")
-    candidate = Candidate.from_dict(json.loads("".join(fragments)))
+    parsed = json.loads("".join(fragments))
+    # Only unwrap the unambiguous single-key envelope used by some gateways.
+    # Never drop arbitrary fields or synthesize missing research information.
+    wrapped = isinstance(parsed, dict) and set(parsed) == {"candidate"}
+    if wrapped:
+        parsed = parsed["candidate"]
+    candidate = Candidate.from_dict(parsed)
     return candidate, {"mode": "api", "model": model, "usage": response.get("usage", {}),
-                       "response_id": response.get("id"), "is_ai_discovery": True}
+                       "response_id": response.get("id"), "is_ai_discovery": True,
+                       "response_envelope_unwrapped": wrapped}

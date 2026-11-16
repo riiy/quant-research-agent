@@ -30,8 +30,16 @@ class Candidate:
     def from_dict(cls, payload: dict) -> "Candidate":
         if not isinstance(payload, dict):
             raise ValueError("Candidate must be an object")
-        if set(payload) != {"title", "rationale", "family", "params", "source_ids"}:
-            raise ValueError("Candidate has missing or unexpected fields")
+        expected = {"title", "rationale", "family", "params", "source_ids"}
+        actual = set(payload)
+        if actual != expected:
+            # Field names only. Never log the response body or API credentials.
+            raise ValueError(
+                "Candidate schema mismatch: "
+                f"missing={sorted(expected - actual)}, "
+                f"unexpected={sorted(actual - expected)}. "
+                "The model or API gateway did not honor the exact candidate schema."
+            )
         title, rationale = payload["title"], payload["rationale"]
         if not all(isinstance(x, str) and 10 <= len(x.strip()) <= 600 for x in (title, rationale)):
             raise ValueError("Title and rationale must be substantive strings")

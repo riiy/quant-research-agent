@@ -59,11 +59,50 @@ class DiscoveryContractTests(unittest.TestCase):
         self.assertEqual(body["input"][0]["role"], "user")
         self.assertEqual(body["input"][0]["content"][0]["type"], "input_text")
         self.assertIn("Select one hypothesis", body["input"][0]["content"][0]["text"])
+        self.assertIn("EXACTLY these five top-level keys", body["input"][0]["content"][0]["text"])
         self.assertEqual(body["model"], "test-model")
         self.assertEqual(body["text"]["format"]["type"], "json_schema")
         self.assertEqual(candidate.as_dict(), expected)
         self.assertEqual(meta["usage"], payload["usage"])
 
+
+    def test_candidate_envelope_is_accepted_only_when_unambiguous(self):
+        from io import BytesIO
+        expected = seed_candidate().as_dict()
+        wrapped = {"status": "completed", "output": [{"content": [
+            {"type": "output_text", "text": json.dumps({"candidate": expected})}
+        ]}]}
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "fake-key"}):
+            with patch("quant_research_agent.discovery.request.urlopen",
+                       return_value=BytesIO(json.dumps(wrapped).encode())):
+                candidate, meta = discover("api")
+        self.assertEqual(candidate.as_dict(), expected)
+        self.assertTrue(meta["response_envelope_unwrapped"])
+
+    def test_gateway_schema_mismatch_shows_key_names_not_response_values(self):
+        from io import BytesIO
+        malformed = {
+            "title": "Unique private hypothesis details",
+            "family": "momentum", "params": {"lookback": 180},
+            "source_ids": ["moskowitz2012"], "commentary": "SECRET RESPONSE VALUE"
+        }
+        payload = {"status": "completed", "output": [{"content": [
+            {"type": "output_text", "text": json.dumps(malformed)}
+        ]}]}
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "fake-key"}):
+            with patch("quant_research_agent.discovery.request.urlopen",
+                       return_value=BytesIO(json.dumps(payload).encode())):
+                with self.assertRaisesRegex(ValueError, "missing=\\['rationale'\\]") as caught:
+                    discover("api")
+        message = str(caught.exception)
+        self.assertIn("unexpected=['commentary']", message)
+        self.assertNotIn("SECRET RESPONSE VALUE", message)
+        self.assertNotIn("Unique private hypothesis details", message)
+
+    def test_unexpected_wrapper_extra_field_fails_closed(self):
+        with self.assertRaisesRegex(ValueError, "unexpected="):
+            Candidate.from_dict({"candidate": seed_candidate().as_dict(),
+                                 "explanation": "not allowed"})
 
 class CandidateTests(unittest.TestCase):
     def test_reject_untrusted_code_or_parameters(self):

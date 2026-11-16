@@ -7,7 +7,7 @@ from urllib import error, request
 
 from .models import Candidate, SOURCES, seed_candidate
 
-API_URL = "https://api.openai.com/v1/responses"
+API_URL = os.getenv("OPENAI_API_URL", "https://api.openai.com/v1/responses")
 
 
 def discover(mode: str = "api") -> tuple[Candidate, dict]:

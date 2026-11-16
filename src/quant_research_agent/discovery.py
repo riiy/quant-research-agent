@@ -7,6 +7,35 @@ from urllib import error, request
 
 from .models import Candidate, SOURCES, seed_candidate
 
+
+def load_env_file(filepath=".env"):
+    if not os.path.exists(filepath):
+        return
+
+    with open(filepath, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            # 跳过空行和以 # 开头的注释行
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+
+            # 使用 split("=", 1) 确保只按第一个等号分割
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+
+            # 去除值两端的单引号或双引号
+            if (value.startswith('"') and value.endswith('"')) or \
+               (value.startswith("'") and value.endswith("'")):
+                value = value[1:-1]
+
+            # 注册到环境变量（使用 os.environ.setdefault 可避免覆盖已有环境变量）
+            os.environ[key] = value
+
+# 调用函数加载
+load_env_file(".env")
+
+
 API_URL = os.getenv("OPENAI_API_URL", "https://api.openai.com/v1/responses")
 
 

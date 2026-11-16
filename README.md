@@ -51,6 +51,16 @@ quant-agent finalize <run_id>
 
 Previously stored pre-2025 prices are checked byte-equivalently at the canonical-bar level. If changed, finalization fails. Holdout results are archived, not recycled into parameter search.
 
+### API gateway compatibility
+
+The request sends Responses API `input` as a **list of user messages**. Official
+OpenAI accepts either a string or an array, but some LiteLLM ChatGPT adapters
+reject strings with `Input must be a list`. This client-side fix addresses
+that request shape only. Older LiteLLM adapters may also silently drop
+`text.format` (structured JSON output); if the response is not valid JSON,
+prefer the official paid OpenAI API endpoint or upgrade/fix the gateway
+instead of weakening the research schema. ChatGPT Plus is not API credit.
+
 ### Offline smoke test
 
 Run **without** API access, on real downloaded data or on your own continuous CSV. The result is intentionally marked as a seeded demo and **not** as automatic discovery:

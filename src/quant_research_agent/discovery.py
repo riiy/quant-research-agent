@@ -78,7 +78,8 @@ def discover(mode: str = "api") -> tuple[Candidate, dict]:
     )
     body = {
         "model": model, "instructions": prompt,
-        "input": "Select one hypothesis, articulate its economic rationale and likely failure modes.",
+        "input": [{"role": "user", "content": [{"type": "input_text",
+                 "text": "Select one hypothesis, articulate its economic rationale and likely failure modes."}]}],
         "max_output_tokens": 800,
         "text": {"format": {"type": "json_schema", "name": "candidate", "strict": True, "schema": schema}},
     }

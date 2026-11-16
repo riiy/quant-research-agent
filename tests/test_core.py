@@ -9,6 +9,7 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
+from quant_research_agent.discovery import discover
 from quant_research_agent.backtest import simulate, signal
 from quant_research_agent.cli import finalize, main, run_once
 from quant_research_agent.data import Bar, load_csv, parse_row, parse_timestamp, prefix_hash, verify_bars, sha256_file
@@ -33,6 +34,35 @@ def write_csv(path, bars):
         w.writerow(['day','open','high','low','close','volume'])
         for b in bars:
             w.writerow([b.day, b.open, b.high, b.low, b.close, b.volume])
+
+
+class DiscoveryContractTests(unittest.TestCase):
+    def test_api_discovery_sends_responses_input_as_message_list(self):
+        from io import BytesIO
+        expected = seed_candidate().as_dict()
+        payload = {
+            "status": "completed",
+            "output": [{"type": "message", "content": [
+                {"type": "output_text", "text": json.dumps(expected)}
+            ]}],
+            "usage": {"input_tokens": 12, "output_tokens": 34},
+        }
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-only-key",
+                                      "QUANT_MODEL": "test-model"}):
+            with patch("quant_research_agent.discovery.request.urlopen",
+                       return_value=BytesIO(json.dumps(payload).encode())) as mocked:
+                candidate, meta = discover("api")
+
+        request_obj = mocked.call_args.args[0]
+        body = json.loads(request_obj.data)
+        self.assertIsInstance(body["input"], list)
+        self.assertEqual(body["input"][0]["role"], "user")
+        self.assertEqual(body["input"][0]["content"][0]["type"], "input_text")
+        self.assertIn("Select one hypothesis", body["input"][0]["content"][0]["text"])
+        self.assertEqual(body["model"], "test-model")
+        self.assertEqual(body["text"]["format"]["type"], "json_schema")
+        self.assertEqual(candidate.as_dict(), expected)
+        self.assertEqual(meta["usage"], payload["usage"])
 
 
 class CandidateTests(unittest.TestCase):

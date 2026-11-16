@@ -17,11 +17,11 @@ Prove the smallest auditable BTC spot daily strategy-discovery → backtest → 
 
 ## Current phase
 
-`CORE_LOOP_NUMERICALLY_REPRODUCED_INDEPENDENT_EXECUTION_AUDIT_PENDING`
+`MVP_CORE_LOOP_ACCEPTED_RESEARCH_ONLY`
 
-The first real-data/API research loop and archive completed. The saved metrics were recalculated using the same local BTC daily CSV, candidate, and project backtest implementation, matching every archived field (relative/absolute tolerance `1e-12` for floating-point fields). The saved validation status and reasons matched as well.
+The first real-data/API research loop, report archive, same-implementation numerical reproduction, and independently coded execution reconstruction **all passed**. The bounded 2024 execution audit finished on 2026-11-16 with `INDEPENDENT EXECUTION RECONSTRUCTION PASSED`. **The MVP acceptance goal is met; stop further execution-infrastructure work unless a material error is discovered.**
 
-**Scope of evidence:** same-data/same-implementation numerical reproducibility is verified. This is **not** independent implementation verification, independent environment reproduction, verified alpha, or authorization to trade. The original run did not capture its Git commit SHA; do not claim code-version identity beyond the evidence available.
+**Scope of evidence:** same historical CSV, archived JSON summaries, and a separately implemented 2024 execution replay. The original per-trade fills were not recorded, so no direct fill-by-fill reconciliation was possible. Independent source-level market-data verification and reproduction in a separate environment are not claimed. The original experiment did not record its Git commit SHA. None of these results establishes alpha, authorizes simulation, or permits trading.
 
 ## First real experiment (archived)
 
@@ -40,7 +40,8 @@ data_source: "binance-public-data-spot-monthly"
 data_sha256: "89d904a06e5daf3a0cb59ef87562d5b47da0cea786d82eb867bfbe2898f17be5"
 strategy_status: "ARCHIVED_REJECTED_OR_INCONCLUSIVE"
 numerical_reproduction: "PASSED"
-independent_execution_audit: "PENDING"
+independent_execution_audit: "PASSED_RECONSTRUCTION"
+mvp_core_loop: "ACCEPTED"
 holdout_evaluated: false
 trading_allowed: false
 account_simulation_allowed: false
@@ -64,7 +65,12 @@ The 2024 initial screen rejected the strategy because its net return failed to o
 - User ran an offline, no-API recomputation of development, validation, and validation double-cost summaries with the archived candidate and historical CSV.
 - Assertions passed for candidate fingerprint, rules, data SHA256, pre-holdout canonical data prefix hash, all persisted summary metrics, archive status, failure reasons, and absence of a holdout result.
 - Reported terminal result: `REPRODUCTION PASSED`.
-- Independent trade-by-trade verification has **not** yet been performed.
+- On 2026-11-16, user executed the standalone `audit_btc120_execution.py --root runtime`. It does not call the production `backtest.simulate` or `signal` implementation.
+- The audit independently reconstructed all **7 entries and 6 completed exits** in 2024, verified the prior-close / next-open chronology and fee/slippage/cash identities across **13 events**, and matched **all 12 saved summary fields** in each of the base-cost and double-cost validation scenarios.
+- Audit outcomes: base net return **92.2594%**, base net excess **-28.7148%**; doubled-cost net return **88.5470%**, doubled-cost net excess **-32.0964%**.
+- Audit output: `runtime/audits/13d17d479477_2024_trade_ledger.csv` (local generated evidence, not included in this Git commit).
+- Terminal evidence: `INDEPENDENT EXECUTION RECONSTRUCTION PASSED` (user-reported from local execution).
+- **Limit:** the original experiment contains summary results, not original per-trade fills. The audit independently reconstructed trades against the same CSV and compared summary metrics; it did not directly compare two independently captured trade ledgers.
 
 ## Minimum completion evidence
 
@@ -74,15 +80,14 @@ The 2024 initial screen rejected the strategy because its net return failed to o
 4. Development, validation and transaction-cost stress backtests executed and archived: **PASSED**.
 5. Saved metrics re-calculated offline with identical data/rules: **PASSED**.
 6. No broker order routing or account simulation permissions: **ENFORCED by MVP scope**.
-7. Independent audit of 2024 entries/exits, next-open fills, fees and slippage: **PENDING**.
+7. Independent 2024 trade-event reconstruction, next-open timing, cash and fee identities: **PASSED**.
+8. Full independent market-data and cross-environment verification: **NOT IN SCOPE** for this minimum MVP acceptance.
 
 ## Next action and stop condition
 
-**One bounded audit:** independently recalculate the 2024 validation period's **7 entries and 6 completed exits**, checking prior-close signal availability, following-day open execution, and fee/slippage cash and position accounting.
+**Close this MVP validation task.** Keep the 120-day momentum candidate archived as `ARCHIVED_REJECTED_OR_INCONCLUSIVE`, and do **not** use the sealed 2025 holdout for it. Do not retune its lookback or reopen the failed setup.
 
-- If consistent, mark the **MVP core loop** accepted, archive this strategy permanently, and return focus to economically distinct hypotheses. No broader infrastructure investment is required.
-- If inconsistent, mark the affected historical result invalid, repair only the material execution defect, and rerun the frozen experiment before drawing conclusions.
-- No need to call the LLM again, retune 120-day momentum, open the 2025 holdout or expand to multi-market research for this audit.
+For any subsequent research cycle, prioritize **a genuinely different, evidence-grounded economic mechanism**, not more pipeline engineering or parameter variations. Only revisit this MVP's execution infrastructure if a concrete material defect is discovered. Live trading, simulation, autonomous code execution, and multi-market features remain out of scope.
 
 ## Explicitly deferred
 

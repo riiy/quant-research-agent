@@ -1,0 +1,17 @@
+[Unit]
+Description=Quant Research Agent (research-only one-shot)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=quantresearch
+WorkingDirectory=/opt/quant-research-agent
+EnvironmentFile=/etc/quant-research-agent.env
+ExecStart=/opt/quant-research-agent/.venv/bin/quant-agent run-once --mode api
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/quant-research-agent/runtime
+TimeoutStartSec=180

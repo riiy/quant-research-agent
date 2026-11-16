@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily research check (will cost API tokens)
+
+[Timer]
+OnCalendar=*-*-* 03:20:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+Unit=quant-agent.service
+
+[Install]
+WantedBy=timers.target

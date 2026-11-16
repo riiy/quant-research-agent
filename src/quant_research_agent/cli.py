@@ -11,6 +11,7 @@ import sys
 from .backtest import assess, simulate
 from .data import ingest, load_research_data, prefix_hash
 from .discovery import discover
+from .evidence import legacy_trend_researched
 from .models import Candidate
 from .reports import write_report
 from .storage import Store
@@ -24,6 +25,16 @@ def run_once(root: Path, data_path: Path, mode: str) -> str:
     store = Store(root)
     if store.paused():
         raise RuntimeError("Research is paused")
+    # Every existing executable rule family shares trend persistence.
+    # The archived BTC trend experiment makes further parameter variants
+    # low-value. Check before data loading or spending another API call.
+    if mode == "api" and legacy_trend_researched(store):
+        raise RuntimeError(
+            "Legacy trend mechanism saturated by an archived real experiment; "
+            "no new SMA/momentum/breakout parameter search is allowed. "
+            "Use 'quant-ideas preview' and 'quant-ideas discover --mode api' "
+            "for an evidence-screened, distinct economic mechanism."
+        )
     # No API call is needed to check local data; don't pay for unusable runs.
     bars, provenance = load_research_data(data_path)
     if bars[0].day > TRAIN_START or bars[-1].day < VALID_END:

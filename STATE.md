@@ -95,3 +95,18 @@ For any subsequent research cycle, prioritize **a genuinely different, evidence-
 ## Explicitly deferred
 
 Live literature search, autonomous code execution, multi-market agents, local GPU LLM, dashboard and account-level trading simulation.
+
+## Discovery funnel v2 — improvement scoped after MVP acceptance (2026-11-16)
+
+`discovery_upgrade: IMPLEMENTED_OFFLINE_TESTED_REAL_API_PENDING`
+
+- A source registry contains six manually verified academic references with DOIs, study universes, and transfer limitations (including contrary evidence for illiquid-asset reversal in a BTC-only market).
+- Fixed screening checks **economic mechanism, source relevance, data availability, predeclared falsifier and mechanism-level novelty**. The numeric score is triage only, not estimated alpha.
+- SMA, momentum and channel breakout are grouped as `trend_persistence`; after an archived real trend experiment, legacy `quant-agent run-once --mode api` refuses additional trend variants before data loading/model calls.
+- `quant-ideas preview` and `quant-ideas sources` are offline; `quant-ideas discover --mode seed` is a non-persisting demo. A paid `quant-ideas discover --mode api` can propose **one** nontrend, OHLCV-feasible idea per mechanism and archives its evidence/kill test separately from historical backtests.
+- Current first eligible mechanism: `volatility_exposure`, with Moreira–Muir evidence explicitly marked as **traditional factor market transfer**, no demonstrated BTC spot alpha, and execution state `RULE_NOT_IMPLEMENTED`.
+- Investor attention is blocked without external signal data; cross-sectional reversal is blocked due to BTC transfer mismatch. No 2025 holdout, simulated trades, parameter tuning or execution engine changes.
+- The discovery funnel has only offline/mocked tests thus far; real paid gateway behavior and the quality of any generated idea are **not yet verified**.
+
+**Next bounded action:** run `quant-ideas preview`, then at most one `quant-ideas discover --mode api` call. Evaluate whether the returned idea has a genuinely distinct, executable economic mechanism, a risk/exposure-matched benchmark, and a kill test. Stop if it does not. Do not expand the infrastructure to fabricate more candidates.
+

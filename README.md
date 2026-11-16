@@ -64,6 +64,61 @@ defaults, arbitrary field removal, or automatic paid retries are performed.
 If field errors persist, check that the gateway supports Responses structured
 output or use the official paid OpenAI API endpoint. ChatGPT Plus is not API credit.
 
+### New evidence-first idea funnel (v2, independent of the accepted backtest)
+
+This optional discovery upgrade keeps the accepted execution engine frozen. It
+uses a **fixed, human-reviewed registry of six published papers** (source IDs,
+DOI links, study universes, findings and transfer limitations). It does **not**
+scrape the live Web or claim that a paper proves BTC alpha. A deterministic
+economic-mechanism gate runs *before* any paid API request:
+
+- `trend_persistence` (SMA, momentum and breakout variants): **blocked** after
+  the archived BTC 120-day trend result. Legacy `quant-agent run-once --mode api`
+  now refuses to buy further trend-parameter proposals when a real trend
+  experiment exists; seed-mode integration tests remain possible.
+- `liquidity_reversal`: **blocked** for BTC-only research. Zaremba et al.
+  and Bianchi et al. find reversal mainly in less liquid cryptocurrency
+  cross-sections, not strong supporting evidence for BTC spot reversal.
+- `attention_demand`: **blocked** until independent Google search-volume data
+  exists and its timestamp availability is verified.
+- `volatility_exposure`: **eligible for one new research idea** using daily
+  OHLCV. Moreira and Muir studied volatility management outside BTC; this
+  is **transfer-only evidence**, not BTC alpha proof. The alternative
+  comparator must explicitly control for reduced market exposure.
+
+No new signal family or trade execution has been implemented. A generated
+idea is **AWAITING_RULE_DESIGN_NOT_BACKTESTED**, never a validated strategy.
+One idea per economic mechanism is stored in `runtime/ideas.sqlite3` with
+the sources, fixed comparison, falsifier, evidence-scope grade and model
+usage. Renaming a trend setup or tweaking its lookback does not reset
+novelty. When no viable untested mechanism remains, the command stops
+**before API billing** rather than endlessly proposing variants.
+
+```bash
+# No API, no BTC data required
+quant-ideas sources
+quant-ideas preview
+quant-ideas discover --mode seed
+
+# At most one paid hypothesis for the currently eligible mechanism
+quant-ideas discover --mode api
+quant-ideas list
+```
+
+The new idea generation shares the existing `QUANT_MAX_API_CALLS_MONTH`
+reservation counter and same `OPENAI_API_KEY` / `QUANT_MODEL`. Limits on API
+request counts are not currency spend caps. Use an upstream provider hard
+spend limit. The demo does not consume the unique mechanism. Idea records
+are separate from existing strategy experiments; **no 2025 holdout or
+trading permission is touched**.
+
+The source registry is curated from the published abstracts; it is **not a
+general literature-review agent**. The 0–6 screening score is a deterministic
+triage aid for evidence fit, data feasibility and novelty, **not** a likelihood
+of alpha. Do not implement the volatility idea unless its proposed rule,
+risk/exposure-adjusted comparator, and kill test are explicitly reviewed
+and frozen beforehand.
+
 ### Offline smoke test
 
 Run **without** API access, on real downloaded data or on your own continuous CSV. The result is intentionally marked as a seeded demo and **not** as automatic discovery:

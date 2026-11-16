@@ -11,6 +11,7 @@ dependencies = []
 
 [project.scripts]
 quant-agent = "quant_research_agent.cli:main"
+quant-ideas = "quant_research_agent.idea_funnel:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

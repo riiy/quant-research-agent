@@ -206,6 +206,19 @@ class ArchiveTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'paused'):
                 run_once(root, root / 'absent.csv', 'seed')
 
+    def test_legacy_trend_repeat_stops_before_data_or_api(self):
+        with TemporaryDirectory() as t:
+            root = Path(t)
+            candidate = seed_candidate()
+            Store(root).save(candidate.fingerprint, candidate.as_dict(), {}, {},
+                             "ARCHIVED_REJECTED_OR_INCONCLUSIVE", root / "prior.md")
+            with patch("quant_research_agent.cli.load_research_data",
+                       side_effect=AssertionError("data should not be loaded")):
+                with patch("quant_research_agent.cli.discover",
+                           side_effect=AssertionError("API should not be called")):
+                    with self.assertRaisesRegex(RuntimeError, "saturated"):
+                        run_once(root, root / "nonexistent.csv", "api")
+
     def test_api_monthly_quota(self):
         with TemporaryDirectory() as t:
             store = Store(Path(t))

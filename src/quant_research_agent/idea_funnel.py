@@ -218,6 +218,9 @@ def main(argv: list[str] | None = None) -> int:
     discover_cmd = commands.add_parser("discover", help="Generate one new, non-trend idea, then archive its screening")
     discover_cmd.add_argument("--mode", choices=("api", "seed"), default="api")
     commands.add_parser("list", help="List screened idea metadata and records")
+    kill_cmd = commands.add_parser("kill-test", help="2018-2023 volatility mechanism screen (no backtest/API)")
+    kill_cmd.add_argument("--idea-id", required=True, help="Existing 12-hex archived volatility idea ID")
+    kill_cmd.add_argument("--data", type=Path, help="BTCUSDT daily CSV; rows after 2023 never read")
     args = parser.parse_args(argv)
     try:
         if args.command == "sources":
@@ -227,6 +230,9 @@ def main(argv: list[str] | None = None) -> int:
             output = {key: mechanism_screen(key, seen) for key in MECHANISMS}
         elif args.command == "list":
             output = IdeaStore(args.home).list()
+        elif args.command == "kill-test":
+            from .volatility_kill_test import run
+            output = run(args.home, args.idea_id, args.data)
         else:
             output = discover(args.home, args.mode)
         print(json.dumps(output, indent=2, ensure_ascii=False))

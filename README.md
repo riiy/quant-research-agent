@@ -119,6 +119,56 @@ of alpha. Do not implement the volatility idea unless its proposed rule,
 risk/exposure-adjusted comparator, and kill test are explicitly reviewed
 and frozen beforehand.
 
+### Bounded volatility mechanism Kill Test (no strategy/backtest)
+
+For the **already generated** idea `4b7cb9282852`, run one fixed
+mechanism diagnostic before implementing trading rules. This command
+does **not** make model calls, run `backtest.simulate`, modify
+`ideas.sqlite3`, calculate transaction P&L, or use any 2024/2025 data.
+
+```bash
+quant-ideas kill-test --idea-id 4b7cb9282852
+# Optional: --data runtime/data/BTCUSDT-1d.csv
+```
+
+- Uses **only 2018-01-01 through 2023-12-31** from the daily CSV.
+  The loader stops after 2023-12-31 even if later rows are present.
+- **Calibration**: calculate the standard deviation of 30 completed
+  close-to-close log returns; freeze the median of the signals dated
+  2018-01-31 through 2020-12-31.
+- **Mechanism test**: for dates 2021-01-01 through 2023-12-31,
+  classify each next-day close-to-close log return using the trailing
+  30-day volatility *known after the previous close*.
+- Primary measure: mean **absolute next-day log return** in higher-vol
+  versus lower-vol regimes. A meaningful conditional-risk relationship
+  requires a high/low ratio >= **1.20**, a one-sided 95% lower bound
+  above 1.0 from a **fixed-seed 14-day block bootstrap** (1,000
+  replicates), and at least **100 daily observations** in each regime.
+- Compensation veto: the high-vol regime must *not* have a higher
+  mean log return per unit mean absolute log return than the low-vol
+  regime. Both measures and sample counts are reported. These are
+  **screening rules chosen in advance**, not estimated alpha or a
+  formal BTC risk premium model.
+- Outcomes are `STOP_INSUFFICIENT_MECHANISM_EVIDENCE` or
+  `PASS_MECHANISM_GATE_ONLY`. A pass allows discussion of a fixed
+  rule and separately predeclared, fee-adjusted exposure-matched
+  backtest; it is **not** such a backtest or authorization to trade.
+- Writes an immutable JSON report to
+  `runtime/ideas/<idea_id>_volatility_mechanism_kill_v1.json`,
+  recording the exact protocol, 2018–2023 OHLCV prefix hash, threshold,
+  conditions and observations. Repeating the command with identical
+  data is safe; a changed report is refused rather than overwritten.
+
+The 2021–2023 evaluation segment is a chronological split **within
+the previously studied 2018–2023 development years**, not a fresh
+project-wide out-of-sample set. Results do not establish BTC alpha
+or validate the Moreira–Muir transfer. Because no trades are modeled
+here, there is no fee/slippage or exposure-matched strategy comparison;
+those belong to a later, separately approved backtest **only if**
+the mechanism gate passes. An inconclusive/failing gate should stop
+this idea rather than trigger lookback/threshold adjustment. The idea's
+database status is deliberately left unchanged pending human review.
+
 ### Offline smoke test
 
 Run **without** API access, on real downloaded data or on your own continuous CSV. The result is intentionally marked as a seeded demo and **not** as automatic discovery:

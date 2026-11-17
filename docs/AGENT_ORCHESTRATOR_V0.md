@@ -59,7 +59,7 @@ quant-orchestrator --home runtime status
 quant-orchestrator --home runtime tick --policy runtime/orchestrator.policy.json
 ```
 
-Expected **first** tick: `NO_NEW_FEASIBLE_MECHANISMS` with a registry snapshot; **second** tick: `IDLE_NO_APPROVED_TASKS`. It is correct to produce no paid LLM traffic and no new strategies. Policy is **not** consent to trade or perform holdout evaluation. To approve a previously archived report integrity check, append a new `verify_archived_report` task with an exact content SHA256 calculated on the operator's local report. Do **not** register a task with a fabricated hash.
+Expected **first** tick: `NO_NEW_FEASIBLE_MECHANISMS` with a registry snapshot; **second** tick: `IDLE_NO_APPROVED_TASKS`. The `status` command is a read-only snapshot and exits with code **0** on successful inspection; it does not have a top-level `status` JSON field. A `tick` with `FAILED_*` or `BLOCKED_MISSING_INPUT` exits nonzero; healthy `NO_NEW_FEASIBLE_MECHANISMS` and `IDLE_NO_APPROVED_TASKS` exit 0. The `acceptance` command exits 1 for `NOT_YET`, and 0 only after `PASS_UNATTENDED_CONTROLLER_GATE_ONLY`, so automation cannot mistake an unmet gate for success. It is correct to produce no paid LLM traffic and no new strategies. Policy is **not** consent to trade or perform holdout evaluation. To approve a previously archived report integrity check, append a new `verify_archived_report` task with an exact content SHA256 calculated on the operator's local report. Do **not** register a task with a fabricated hash.
 
 ### Optional systemd example, **operator action only**
 

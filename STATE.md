@@ -280,7 +280,7 @@ trading_allowed: false
 research_id: BTC_ATTENTION_DEMAND_v1
 mechanism: investor_attention_demand
 phase: PHASE_1_RETROSPECTIVE_INCREMENTAL_INFORMATION
-status: PROTOCOL_FROZEN_IMPLEMENTED_SYNTHETIC_TESTED_REAL_SPOT_RESULT_PENDING
+status: STOP_INSUFFICIENT_INCREMENTAL_INFORMATION
 calibration: "2020-2021"
 evaluation: "2022-2023"
 primary_signal: "Google Trends Bitcoin Cryptocurrency Topic /m/05p0rrx"
@@ -303,4 +303,43 @@ trading_allowed: false
 
 **Pass gate:** overall Topic MSE reduction ≥5% vs same price-only model; paired circular 4-week block bootstrap ×2000, one-sided 95% lower bound of MSE gain >0; positive MSE gains in both evaluation years; augmented model beats fixed zero-return predictor; Search term positive overall MSE gain. Failure => STOP and archive this exact hypothesis; no tweaks, no 2024/2025 peek. Pass => `PASS_RETROSPECTIVE_INCREMENTAL_INFORMATION_ONLY`, not validated historical tradability, alpha or strategy backtest permission.
 
-**Execution status:** CLI and 12 synthetic/offline tests are implemented and passed in authoring environment. **No real market prediction result**: the verified local 2020–2023 spot CSV was not available in the assistant's current container; the user may run on their existing local file. Do not alter archived strategies or add data infrastructure before seeing the actual one-shot report.
+**Execution status:** CLI and 12 synthetic/offline tests passed. The user subsequently ran the frozen retrospective Kill Test on local 2020–2023 BTC spot data and supplied a failed real-data report; its results and limits are recorded below. The underlying raw price file was not independently re-run in the assistant environment.
+
+### BTC attention Phase 1 actual retrospective Kill Test — stopped and archived (2026-11-17)
+
+**Evidence:** user-uploaded local `BTCUSDT-attention-phase1-retrospective-kill-v1.json`, protocol `BTC_ATTENTION_DEMAND_v1_retrospective_incremental_kill_frozen_2026-11-17`; results follow the predeclared primary Topic and robustness Search term design. The local CSVs were not independently re-evaluated here.
+
+```yaml
+research_id: BTC_ATTENTION_DEMAND_v1
+mechanism: investor_attention_demand
+phase: PHASE_1_RETROSPECTIVE_INCREMENTAL_INFORMATION
+calibration: "2020-2021"
+evaluation: "2022-2023"
+training_weeks: 97
+evaluation_weeks: 104
+topic_mse: 0.007363039853341847
+price_only_mse: 0.007372907653703622
+zero_return_mse: 0.007047648383972307
+relative_topic_mse_gain: 0.0013383865396467362
+bootstrap_lower_one_sided_95_mse_gain: -0.000019224585919018704
+relative_term_mse_gain: -0.0006137635439484827
+status: STOP_INSUFFICIENT_INCREMENTAL_INFORMATION
+decision: ARCHIVE_RETROSPECTIVE_ATTENTION_PREDICTION_CANDIDATE
+strategy_backtest_allowed: false
+holdout_evaluated: false
+trading_allowed: false
+```
+
+**All five frozen gates failed:**
+
+1. Topic improvement **0.1338%** is below the required **5%** relative MSE reduction.
+2. Four-week block-bootstrap one-sided 95% lower MSE-gain bound is **negative**, so positive incremental prediction improvement is not supported.
+3. The 2022 paired absolute MSE gain was `+0.000022921325611290846`; 2023 was `-0.0000031857248877415244`, violating the required positive sign in both years.
+4. Topic augmented model MSE `0.007363039853341847` is worse than predeclared zero-return forecast MSE `0.007047648383972307` (roughly **4.48%** larger).
+5. Search term robustness effect was **−0.0614%** relative MSE gain.
+
+**Input provenance (report):** Topic SHA256 `99b33105242c99e2b9580de04413c269c38d1988a1fa3a6fd26987d05a341a5f`, Search term SHA256 `8eb882a7984d96bdd4033010263710fc404c0d7add9b77d6d8181a4f82d6e8fe`, 2020–2023 spot prefix SHA256 `fa5113d1b946ed19ab0eb48d32e05317ef944a6ba12bee79680ba7a247237def`. The report is user-run evidence, not an independent raw-data reproduction.
+
+**Interpretation:** This **specific, fixed weekly BTC attention incremental-prediction hypothesis** failed its predetermined materiality, statistical, annual-stability, naive-forecast and robustness gates. Do not infer investor attention can never affect crypto markets. The historical Trends export is full-period normalized and point-in-time unavailable, further limiting retrospective findings.
+
+**Stop and archive:** Do not change search entity/term, model penalty, lookbacks, forecast lag, horizons or evaluation window to rescue the candidate. Do not open 2024/2025, generate trading rules, or perform strategy P&L. Close the current attention-demand candidate; only an independent economic mechanism with genuinely new evidence warrants a separately preregistered future study.

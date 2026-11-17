@@ -247,3 +247,28 @@ The default state root is `./runtime` (override with `QUANT_HOME`). It contains 
 ### Limitations and stop condition
 
 This MVP does not discover papers from the live Web, optimize trading costs using order books, calculate bootstrap confidence intervals or prove statistical alpha. An early 2024 screen and one 2025 holdout cannot establish stable reproducible excess return. If research repeatedly produces no economically credible hypotheses, stop rather than expanding infrastructure or tuning filters. No historical strategy already archived in the parent Trading Research project is reopened.
+
+### Bitcoin investor attention — frozen retrospective Phase 1 (research only)
+
+The distinct economic mechanism `BTC_ATTENTION_DEMAND_v1` asks if Google search attention has incremental **future BTC spot return prediction** beyond historical return, realized volatility and BTC base-volume. Google Trends **Topic** (`/m/05p0rrx`) is **the only primary signal**; `bitcoin` Search term is a predeclared robustness veto, never a winner-selection alternative.
+
+Frozen design and limitations: [`docs/ATTENTION_PHASE1_PROTOCOL.md`](docs/ATTENTION_PHASE1_PROTOCOL.md). Inputs are four-year post-period Google Trends exports (not point-in-time available historical signals), so **all conclusions are retrospective only**, not historically executable. Two provided exports of each query were byte-identical; that does not prove independent sampling or prevent future revisions.
+
+The command uses the already archived local 2020–2023 BTC spot OHLCV (no additional downloader); it refuses unpinned data, excludes incomplete boundary weeks, uses Google Trends values and price controls **two complete weeks before each evaluation outcome**, fits both ridge models using 2020–2021 only and evaluates 104 completed weeks in 2022–2023. It never reads 2024/2025 spot prices, refits on the evaluation labels, creates positions, or computes trading P&L.
+
+```bash
+pip install -e .
+quant-attention-kill --topic "/path/to/multiTimeline (1).csv" --term "/path/to/multiTimeline.csv"
+# Custom local project runtime root, if required:
+quant-attention-kill --home runtime --topic "/path/to/multiTimeline (1).csv" --term "/path/to/multiTimeline.csv" --spot runtime/data/BTCUSDT-1d.csv
+```
+
+Expected pinned inputs:
+
+- Topic file SHA256: `99b33105242c99e2b9580de04413c269c38d1988a1fa3a6fd26987d05a341a5f`
+- Search term file SHA256: `8eb882a7984d96bdd4033010263710fc404c0d7add9b77d6d8181a4f82d6e8fe`
+- Full 2020–2023 spot canonical-prefix SHA256: `fa5113d1b946ed19ab0eb48d32e05317ef944a6ba12bee79680ba7a247237def`
+
+The output is immutable: `runtime/attention/BTCUSDT-attention-phase1-retrospective-kill-v1.json`. Gate requires ≥5% relative Topic MSE reduction vs price-only baseline, 95% paired 4-week block-bootstrap lower bound >0, positive annual gains in **both** 2022 and 2023, beating zero-return prediction, and positive same-direction Search term robustness. Otherwise **STOP**; no parameter rescues.
+
+**Status:** synthetic-only code tests passed; real BTC OHLCV was not present in the assistant's execution environment and **no real prediction performance has been computed**. The user must run against the pinned local CSV to determine the outcome. Any pass means `PASS_RETROSPECTIVE_INCREMENTAL_INFORMATION_ONLY`, never backtest/trading permission.

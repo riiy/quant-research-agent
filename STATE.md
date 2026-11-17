@@ -273,3 +273,34 @@ trading_allowed: false
 - The funding CSV SHA256 supplied in the report is `159050d8818298c777f9ac1290530aecc01a01859d209df9d39c306a4b5eb977`, matching the previously frozen Phase 0 canonical digest. Spot 2020–2023 prefix SHA256 in this report: `fa5113d1b946ed19ab0eb48d32e05317ef944a6ba12bee79680ba7a247237def`. Neither dataset was independently recomputed here.
 - **Interpretation:** zero events show inadequate out-of-period *support* and possible funding-regime distribution shift. This does **not** establish the absence of all funding predictive information or refute leverage-pressure economics; it refutes the *testability* of this frozen absolute-threshold candidate in 2022–2023.
 - **Stop:** archive the **exact candidate and protocol**. Do not lower the percentile, switch to rolling quantiles, reverse the sign, change horizons, extend the evaluation interval or peek at 2024/2025 to rescue it. Do not implement strategy trading or historical P&L. Revisit the broader derivatives-pressure mechanism only on genuinely new, independently sourced economic evidence and a separately preregistered research question—not by retuning this failed experiment.
+
+## BTC_ATTENTION_DEMAND_v1 — frozen retrospective Kill Test proposed (2026-11-17)
+
+```yaml
+research_id: BTC_ATTENTION_DEMAND_v1
+mechanism: investor_attention_demand
+phase: PHASE_1_RETROSPECTIVE_INCREMENTAL_INFORMATION
+status: PROTOCOL_FROZEN_IMPLEMENTED_SYNTHETIC_TESTED_REAL_SPOT_RESULT_PENDING
+calibration: "2020-2021"
+evaluation: "2022-2023"
+primary_signal: "Google Trends Bitcoin Cryptocurrency Topic /m/05p0rrx"
+primary_csv_sha256: "99b33105242c99e2b9580de04413c269c38d1988a1fa3a6fd26987d05a341a5f"
+robustness_signal: "Google Trends bitcoin Search term"
+robustness_csv_sha256: "8eb882a7984d96bdd4033010263710fc404c0d7add9b77d6d8181a4f82d6e8fe"
+spot_2020_2023_prefix_sha256: "fa5113d1b946ed19ab0eb48d32e05317ef944a6ba12bee79680ba7a247237def"
+point_in_time_search_history: UNVERIFIED
+strategy_implemented: false
+strategy_backtest_allowed: false
+holdout_evaluated: false
+trading_allowed: false
+```
+
+**Independent mechanism:** investor search attention may proxy external demand/news attention, unlike archived trend, vol-management and perp funding thresholds. **Not** a measured flow of new investor money.
+
+**Source check:** two byte-identical user-uploaded Google Trends exports each for `bitcoin` term and `Bitcoin (Cryptocurrency)` Topic, 210 Sunday-start rows per export; use 208 *complete* study weeks. Identical exports do not prove independent Trends sampling. Both series are **retrospectively retrieved and normalized** over a period including the 2022–2023 evaluation, without historical point-in-time snapshots. That permanently limits any positive result to *retrospective statistical association*. No claim of live execution feasibility.
+
+**Frozen protocol:** `docs/ATTENTION_PHASE1_PROTOCOL.md` in feature PR. Weekly market target = current complete week's spot close-to-close log return; all regressors through **week t−2** (one complete intervening buffer week), 3 price-only variables (1-week historical log return, 4-week realized log-return SD, weekly BTC base-volume vs previous 4-week average), plus Topic log-ratio change. Fixed standardized ridge L2 penalty 10, intercept unpenalized; training 2020–2021 only; 104 evaluation weeks 2022–2023. Search term is predetermined robustness veto, not an additional independently optimized alpha signal.
+
+**Pass gate:** overall Topic MSE reduction ≥5% vs same price-only model; paired circular 4-week block bootstrap ×2000, one-sided 95% lower bound of MSE gain >0; positive MSE gains in both evaluation years; augmented model beats fixed zero-return predictor; Search term positive overall MSE gain. Failure => STOP and archive this exact hypothesis; no tweaks, no 2024/2025 peek. Pass => `PASS_RETROSPECTIVE_INCREMENTAL_INFORMATION_ONLY`, not validated historical tradability, alpha or strategy backtest permission.
+
+**Execution status:** CLI and 12 synthetic/offline tests are implemented and passed in authoring environment. **No real market prediction result**: the verified local 2020–2023 spot CSV was not available in the assistant's current container; the user may run on their existing local file. Do not alter archived strategies or add data infrastructure before seeing the actual one-shot report.

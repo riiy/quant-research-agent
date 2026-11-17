@@ -4,6 +4,27 @@ A **research-only** experiment loop: source-grounded hypothesis discovery → pr
 
 **No broker/exchange trading APIs, keys, order generation, live trading or account-simulation permissions.** Neither a profitable backtest nor a passed holdout grants trading permission.
 
+## Long-term objective: bounded autonomy v0
+
+**North Star:** 7×24 unattended, evidence-driven AI Quant Research Agent. Humans authorize research scope, budgets and safety constraints; the agent discovers, falsifies, archives and loops within them.
+
+The existing BTC strategy execution MVP was accepted but is **not** a full autonomous research agent. The new `AGENT_ORCHESTRATOR_v0` control layer offers an operator-approved task queue, SQLite state/event history, crash recovery, pause/idle, one task per tick and seven-day heartbeat criterion. **It cannot yet independently retrieve new research, design or run new mechanism Kill Tests.** It has no LLM calls, network, trading/backtests, sealed holdout, arbitrary code or exchange access.
+
+See [`docs/AGENT_ORCHESTRATOR_V0.md`](docs/AGENT_ORCHESTRATOR_V0.md) for frozen policy, implementation scope, safety model and the manual deployment/acceptance runbook.
+
+```bash
+pip install -e .
+mkdir -p runtime
+cp deploy/quant-orchestrator.policy.example.json runtime/orchestrator.policy.json
+quant-orchestrator --home runtime tick --policy runtime/orchestrator.policy.json
+quant-orchestrator --home runtime status
+quant-orchestrator --home runtime tick --policy runtime/orchestrator.policy.json
+# Only after seven actual UTC days of operator-verified unattended systemd ticks:
+quant-orchestrator --home runtime acceptance --days 7
+```
+
+The first tick should return `NO_NEW_FEASIBLE_MECHANISMS` for the currently archived registry; later ticks `IDLE_NO_APPROVED_TASKS` with zero model spend. The new timer example is **not auto-enabled**. The old legacy `quant-agent.timer` calls the archived trend runner; do not schedule both. P1 expansion into genuinely new literature and generic bounded Kill Tests is separate from this P0.
+
 ## Design decisions
 
 - Hypotheses come from a **curated evidence note**, currently [Moskowitz, Ooi & Pedersen (2012)](https://doi.org/10.1016/j.jfineco.2011.11.003). The paper concerns futures, **not BTC spot**; BTC transfer is an unproven hypothesis.

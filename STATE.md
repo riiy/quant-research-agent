@@ -4,7 +4,9 @@ Last updated: 2026-11-17
 
 ## Objective
 
-Prove the smallest auditable BTC spot daily strategy-discovery → backtest → validation → archive loop. **Not** to produce trading signals or replicate a full multi-market autonomous agent.
+**Long-term North Star:** 7×24 unattended AI Quant Research Agent. **Humans set research goals, budget, approved methods and safety boundaries; the agent discovers, executes, falsifies, archives and iterates within them.** No trading or sealed holdout access without separate human authorization.
+
+**Completed milestone:** the auditable BTC spot daily discovery → backtest → validation → archive MVP. That accepted MVP was intentionally narrower than an autonomous agent. Do not rewrite its validated engine.
 
 ## Locked constraints
 
@@ -17,7 +19,9 @@ Prove the smallest auditable BTC spot daily strategy-discovery → backtest → 
 
 ## Current phase
 
-`MVP_CORE_LOOP_ACCEPTED_RESEARCH_ONLY`
+`AGENT_AUTONOMY_MVP_IMPLEMENTED_PR_REVIEW_PENDING` — **not deployed, not operationally accepted**.
+
+Prior completed milestone: `MVP_CORE_LOOP_ACCEPTED_RESEARCH_ONLY`.
 
 The first real-data/API research loop, report archive, same-implementation numerical reproduction, and independently coded execution reconstruction **all passed**. The bounded 2024 execution audit finished on 2026-11-16 with `INDEPENDENT EXECUTION RECONSTRUCTION PASSED`. **The MVP acceptance goal is met; stop further execution-infrastructure work unless a material error is discovered.**
 
@@ -343,3 +347,31 @@ trading_allowed: false
 **Interpretation:** This **specific, fixed weekly BTC attention incremental-prediction hypothesis** failed its predetermined materiality, statistical, annual-stability, naive-forecast and robustness gates. Do not infer investor attention can never affect crypto markets. The historical Trends export is full-period normalized and point-in-time unavailable, further limiting retrospective findings.
 
 **Stop and archive:** Do not change search entity/term, model penalty, lookbacks, forecast lag, horizons or evaluation window to rescue the candidate. Do not open 2024/2025, generate trading rules, or perform strategy P&L. Close the current attention-demand candidate; only an independent economic mechanism with genuinely new evidence warrants a separately preregistered future study.
+
+## AGENT_ORCHESTRATOR_v0 — approved-task autonomous control (2026-11-17)
+
+```yaml
+long_term_goal: 7x24_AUTONOMOUS_RESEARCH_DISCOVER_FALSIFY_ARCHIVE_ITERATE
+current_phase: AGENT_AUTONOMY_MVP_IMPLEMENTED_PR_REVIEW_PENDING
+completed_milestone: MVP_CORE_LOOP_ACCEPTED
+active_strategy_research: null
+new_unreviewed_mechanism_execution_allowed: false
+trading_allowed: false
+account_simulation_allowed: false
+ticket_generation_allowed: false
+sealed_holdout_access_allowed: false
+autonomous_external_browsing_allowed: false
+autonomous_code_generation_execution_allowed: false
+agent_systemd_timer_enabled: false
+seven_day_unattended_acceptance: NOT_STARTED
+```
+
+The prior study-by-study approach built useful reproducible tests but not the intended closed-loop autonomous agent. Next priority: control-plane lifecycle, not a fifth BTC mechanism.
+
+**P0 protocol:** [`docs/AGENT_ORCHESTRATOR_V0.md`](docs/AGENT_ORCHESTRATOR_V0.md). Operator-owned JSON policy, archived-mechanism guards, SQLite atomic task claiming, audit events and immutable task approvals, bounded restart recovery, pause/safe idle, UTC-day heartbeats. The new one-shot systemd timer is provided as a **disabled example**; the legacy archived-trend runner is never invoked by this controller.
+
+**v0 task allowlist:** (1) existing curated six-source registry screen for eligible mechanisms; no eligible -> `NO_NEW_FEASIBLE_MECHANISMS`, eligible -> `AWAITING_HUMAN_PROTOCOL_APPROVAL`; (2) SHA256/status/safety verification of a previously archived funding/attention JSON report. Does **not** autonomously retrieve new literature, generate code, run mechanism Kill Tests, backtest, access sealed holdouts, call an LLM or trade. This is intentionally a **P0 controller** with bounded capabilities, not a full research agent.
+
+**No rescue:** trend, volatility exposure, funding pressure and attention demand remain archived and cannot be revived by changing the v0 policy. An empty queue is a correct stop condition, not a request to generate redundant research.
+
+**Acceptance:** Seven *real* consecutive UTC dates of service heartbeats, at least one completed preapproved task, no failed tasks or policy drift, no duplicate work or paid API calls, and independent OS journal verification of unattended scheduling. Simulated-time tests are not proof of a deployed 7×24 agent. Only then record `SEVEN_DAY_UNATTENDED_CONTROLLER_ACCEPTED`. Further P1 evidence discovery / generic bounded test execution requires new human review. Stop further P0 infrastructure work once accepted.

@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "research_only": true,
+  "trading_allowed": false,
+  "account_simulation_allowed": false,
+  "ticket_generation_allowed": false,
+  "holdout_access_allowed": false,
+  "network_access_allowed": false,
+  "model_calls_allowed": false,
+  "arbitrary_code_allowed": false,
+  "strategy_backtest_allowed": false,
+  "max_attempts": 2,
+  "archived_mechanisms": [
+    "trend_persistence",
+    "volatility_exposure",
+    "attention_demand",
+    "derivatives_leverage_pressure"
+  ],
+  "tasks": [
+    {
+      "id": "curated-catalog-screen-20261117",
+      "kind": "screen_curated"
+    }
+  ]
+}

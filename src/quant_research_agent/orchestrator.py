@@ -338,7 +338,17 @@ def main(argv: list[str] | None = None) -> int:
         else:
             output = acceptance(args.home, days=args.days)
         print(json.dumps(output, sort_keys=True, indent=2))
-        return 0 if not output["status"].startswith("FAILED_") else 1
+        # 'status' is a snapshot (paused/last_heartbeat/tasks), not an
+        # outcome object. Never infer its exit code from a missing status key.
+        if args.command == "status":
+            return 0
+        outcome = output["status"]
+        if args.command == "acceptance":
+            # A gate that has not passed must not look successful to CI/scripts.
+            return 0 if outcome == "PASS_UNATTENDED_CONTROLLER_GATE_ONLY" else 1
+        # IDLE/PAUSED/NO_NEW_FEASIBLE_MECHANISMS are healthy outcomes.
+        # A missing pinned input or failed verification needs operator review.
+        return 1 if outcome.startswith("FAILED_") or outcome == "BLOCKED_MISSING_INPUT" else 0
     except (OSError, ValueError, sqlite3.Error, RuntimeError) as exc:
         print(json.dumps({"status": "STOP_CONTROLLER_ERROR", "reason": str(exc)[:300]}), file=sys.stderr)
         return 2

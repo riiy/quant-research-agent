@@ -1,6 +1,6 @@
 # Quant Research Agent — Project State
 
-Last updated: 2026-11-16
+Last updated: 2026-11-17
 
 ## Objective
 
@@ -110,17 +110,41 @@ Live literature search, autonomous code execution, multi-market agents, local GP
 
 ## Discovery funnel v2 — improvement scoped after MVP acceptance (2026-11-16)
 
-`discovery_upgrade: REAL_API_IDEA_GENERATED_MECHANISM_KILL_TEST_PROPOSED`
+`discovery_upgrade: VOLATILITY_MECHANISM_KILL_TEST_FAILED_ARCHIVE_PROPOSED`
 
 - A source registry contains six manually verified academic references with DOIs, study universes, and transfer limitations (including contrary evidence for illiquid-asset reversal in a BTC-only market).
 - Fixed screening checks **economic mechanism, source relevance, data availability, predeclared falsifier and mechanism-level novelty**. The numeric score is triage only, not estimated alpha.
 - SMA, momentum and channel breakout are grouped as `trend_persistence`; after an archived real trend experiment, legacy `quant-agent run-once --mode api` refuses additional trend variants before data loading/model calls.
 - `quant-ideas preview` and `quant-ideas sources` are offline; `quant-ideas discover --mode seed` is a non-persisting demo. A paid `quant-ideas discover --mode api` can propose **one** nontrend, OHLCV-feasible idea per mechanism and archives its evidence/kill test separately from historical backtests.
-- Current first eligible mechanism: `volatility_exposure`, with Moreira–Muir evidence explicitly marked as **traditional factor market transfer**, no demonstrated BTC spot alpha, and execution state `RULE_NOT_IMPLEMENTED`.
+- `volatility_exposure` was the first idea-only mechanism; its fixed 2018–2023 mechanism Kill Test has now **failed**. It is to be archived, not retuned or backtested. Moreira–Muir remains transfer-only evidence from non-crypto factors.
 - Investor attention is blocked without external signal data; cross-sectional reversal is blocked due to BTC transfer mismatch. No 2025 holdout, simulated trades, parameter tuning or execution engine changes.
-- The discovery funnel has only offline/mocked tests thus far; real paid gateway behavior and the quality of any generated idea are **not yet verified**.
+- The discovery funnel completed one real API generation (idea `4b7cb9282852`), but idea generation is not evidence of strategy quality or tradable alpha.
 
-**Latest v2 evidence:** the user ran one real API discovery on 2026-11-16 and reported idea `4b7cb9282852` (`volatility_exposure`), status `AWAITING_RULE_DESIGN_NOT_BACKTESTED`. It proposes a 30-day historical volatility and fixed calibration-median threshold. This is a research note only; no BTC volatility mechanism has been verified.
+**Latest v2 evidence:** the user ran one real API discovery on 2026-11-16 and reported idea `4b7cb9282852` (`volatility_exposure`), originally `AWAITING_RULE_DESIGN_NOT_BACKTESTED`. The subsequent read-only mechanism Kill Test was executed locally and reported failure. Its output does not constitute a trading-strategy backtest.
 
-**Proposed next bounded action (feature PR, pending owner approval):** run `quant-ideas kill-test --idea-id 4b7cb9282852` using **only 2018–2023 daily OHLCV**. Freeze 2018–2020 calibration threshold and compare 2021–2023 next-day absolute returns and relative compensation. An explicit >1.20 risk ratio, one-sided block bootstrap >1, 100+ observations per regime, and no superior high-vol reward-per-risk are required to pass the *mechanism screen only*. Failure/inconclusive => stop this hypothesis; do not tune or open the 2024/2025 data. A pass is not trade proof and needs a separately reviewed fixed execution protocol. The proposed test adds no new LLM calls, backtest engine, or database mutation.
+### Volatility exposure Kill Test — failed, archive decision (2026-11-17)
+
+The user supplied the local mechanism-test JSON `runtime/ideas/4b7cb9282852_volatility_mechanism_kill_v1.json` (the report is **not** committed here). The original report status is `STOP_INSUFFICIENT_MECHANISM_EVIDENCE`; the research decision below maps this to `FAILED` and `ARCHIVE` in project state.
+
+```yaml
+idea_id: "4b7cb9282852"
+mechanism_id: volatility_exposure
+kill_test:
+  period: "2021-2023"
+  status: FAILED
+  risk_ratio: 1.493224
+  bootstrap_lower_95: 1.291403
+  failed_gate: HIGH_VOL_REWARD_COMPENSATION
+decision: ARCHIVE
+strategy_backtest_allowed: false
+holdout_evaluated: false
+```
+
+- Protocol: `btc-vol-mechanism-kill-v1-frozen-2026-11-16`; **2018–2020** used to freeze the 30-day realized volatility median threshold (`0.03262698645975258`), **2021–2023** used for the mechanism check (`1095` observations). No 2024 or 2025 data used.
+- The high/low next-day mean absolute log-return ratio `1.4932242289511706` exceeded the predeclared `1.20` materiality threshold; the 14-day block-bootstrap one-sided 95% lower bound `1.2914030975158188` exceeded `1.0`; both regimes met the 100-day minimum (`501` high, `594` low).
+- **Failed gate:** high-volatility reward per unit mean absolute return `0.02955883943559558` was greater than low-volatility reward per unit mean absolute return `-0.0034058117622033823`; this violates the frozen condition `high <= low`. The result **does not support** the proposed "high volatility → cash" mechanism under the predeclared protocol. It does **not** establish that the mean-return difference itself is statistically significant.
+- **Decision and stop condition:** archive this idea, do not develop an execution rule, do not run strategy backtests, do not optimize the 30-day window or median threshold, and do not inspect 2024/2025 for this candidate. No trading or account simulation authorization.
+- Evidence scope: user-provided JSON only; local report and underlying data were not independently recomputed in this PR, and the local `ideas.sqlite3` record was **not** mutated.
+
+**Next action:** stop this candidate and avoid further model calls for the same volatility mechanism. Reconsider new economic mechanisms or additional data only if a specific decision-relevant hypothesis can be stated.
 

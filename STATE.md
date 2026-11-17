@@ -92,6 +92,18 @@ The 2024 initial screen rejected the strategy because its net return failed to o
 
 For any subsequent research cycle, prioritize **a genuinely different, evidence-grounded economic mechanism**, not more pipeline engineering or parameter variations. Only revisit this MVP's execution infrastructure if a concrete material defect is discovered. Live trading, simulation, autonomous code execution, and multi-market features remain out of scope.
 
+## Repository change and merge authority
+
+**Mandatory workflow from 2026-11-16 onward:**
+
+- Never commit or push repository changes directly to `main`.
+- For every proposed code, test, configuration, or project-state/documentation change, create a dedicated branch from the latest `main`.
+- Commit and push the change only to that branch, then open a pull request targeting `main`.
+- The assistant may prepare the branch, explain the diff, run/check CI, and request review. The assistant must **never merge** the pull request or otherwise update `main`.
+- The repository owner/user retains the sole decision and authority to approve and merge. A pull request is a proposal, not permission to merge.
+- If `main` moves while work is in progress, rebase/update the feature branch and re-run relevant checks; do not bypass the PR workflow.
+- This rule applies to future work. It does not retroactively alter commits already present on `main` before this policy was recorded.
+
 ## Explicitly deferred
 
 Live literature search, autonomous code execution, multi-market agents, local GPU LLM, dashboard and account-level trading simulation.

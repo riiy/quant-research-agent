@@ -156,7 +156,7 @@ research_id: BTC_PERP_FUNDING_PRESSURE_v1
 mechanism: derivatives_leverage_pressure
 market: BTCUSDT USD-M perpetual funding (signal source), BTCUSDT spot (later target)
 phase: DATA_PROVENANCE_AND_TIME_QUALITY_GATE
-status: IMPLEMENTED_SYNTHETIC_TESTED_REAL_BINANCE_AUDIT_PENDING
+status: DATA_AUDIT_PASSED_MECHANISM_NOT_TESTED
 history_range: "2020-01..2023-12"
 strategy_implemented: false
 strategy_backtest_allowed: false
@@ -166,7 +166,7 @@ trading_allowed: false
 
 **Why distinct:** periodic funding payments proxy futures premium and potential leveraged-demand pressure, unlike the archived BTC trend and binary volatility rules. They are not observations of open interest, position sizes, forced liquidation or leverage themselves. Kim (2026), `10.1016/j.jempfin.2026.101779`, finds incremental information for *BTC volatility*, not net BTC spot return predictability.
 
-**Bounded Phase 0:** `quant-funding audit` fetches exactly 48 monthly Binance USD-M `BTCUSDT` funding archives and SHA256 checksums for 2020–2023; validates documented ZIP fields `calc_time,funding_interval_hours,last_funding_rate`, UTC millisecond settlement times, 8-hour grid (00/08/16 UTC), duplicates, missing slots, unexpected intervals and archive chronology. It does not impute or silently repair. Expected 1461 days / 4383 settlements; if archive differs, diagnose rather than assume a complete dataset. It produces immutable local CSV and audit JSON only on successful coverage checks, with failed coverage reported separately. Eight offline synthetic tests passed; **real Binance audit has not run in the authoring environment**.
+**Bounded Phase 0:** `quant-funding audit` fetches exactly 48 monthly Binance USD-M `BTCUSDT` funding archives and SHA256 checksums for 2020–2023; validates documented ZIP fields `calc_time,funding_interval_hours,last_funding_rate`, UTC millisecond settlement times, 8-hour grid (00/08/16 UTC), duplicates, missing slots, unexpected intervals and archive chronology. It does not impute or silently repair. Expected 1461 days / 4383 settlements; if archive differs, diagnose rather than assume a complete dataset. It produces immutable local CSV and audit JSON only on successful coverage checks, with failed coverage reported separately. Eight offline synthetic tests passed; **real Binance v2 audit was subsequently run by the user and reported passing; the assistant has not independently downloaded/recomputed the archive**.
 
 **Gate:** any unresolved provenance or timestamp inconsistency -> stop mechanism testing. If data passes, freeze a distinct, preregistered *mechanism-only* test: calibrate extreme positive funding using 2020–2021, evaluate 2022–2023 post-settlement BTC spot returns/downside risk against lagged-price/volatility controls. Must verify time availability and avoid 2024/2025 data. Predicting volatility is insufficient to grant backtest or trading permission.
 
@@ -181,5 +181,36 @@ The user ran an independent **read-only diagnostic** on all locally cached 2020�
 - The original v1 audit incorrectly treated each millisecond shift as *both* a missing nominal slot and an unexpected raw timestamp, yielding three linked issue counts of 2,233. This is a **strict-equality audit artifact**, not evidence of 2,233 missing settlements.
 - **Auditing rule correction**, not a trading/model parameter: compare to nominal slot with a fixed **0–100 ms post-slot tolerance**; check duplicates on **both original raw timestamp and nominal slot**, full coverage, non-8h intervals, chronology, monthly SHA256 and CSV contract. Preserve original `calc_time` in the canonical export and never infer availability before actual publication.
 - Retain old failed `BTCUSDT-funding-2020-2023.audit.json` unchanged; new v2 outputs `BTCUSDT-funding-2020-2023.audit.v2.json` and `BTCUSDT-funding-2020-2023.v2.csv` (only if clean).
-- **Status:** `TIMESTAMP_JITTER_DIAGNOSED_AUDIT_V2_SYNTHETIC_TESTED_REAL_RECHECK_PENDING`. Eleven offline unittest cases pass in the development environment (including 47ms allowed, 100ms boundary, 101ms rejected, negative offset and nominal-slot collision). Source data **not independently rerun** against v2 in authoring environment.
-- **Next bounded action:** operator runs `quant-funding audit --offline` from the PR branch, submits **v2** audit JSON. Only an actual v2 real-data pass can authorize a separately reviewed mechanism test; 2024/2025 remain sealed. No trading backtest.
+- **Historical v2 pre-recheck status:** `TIMESTAMP_JITTER_DIAGNOSED_AUDIT_V2_SYNTHETIC_TESTED_REAL_RECHECK_PENDING`. Eleven offline unittest cases passed in the development environment (including 47ms allowed, 100ms boundary, 101ms rejected, negative offset and nominal-slot collision). The subsequent **user-run real-data v2 audit passed**; see the completed gate below.
+- **Historical next action (completed):** the operator ran `quant-funding audit --offline` and submitted the **v2** audit JSON. A separate, preregistered mechanism test may now be prepared for review; no automatic strategy backtest or holdout use.
+
+### Phase 0 actual Binance archive audit v2 — passed (user report, 2026-11-17)
+
+**Evidence**: user-uploaded `BTCUSDT-funding-2020-2023.audit.v2.json`; protocol `BTC_PERP_FUNDING_PRESSURE_v2_timestamp_jitter_audit_2020_2023`. This is a **data quality/provenance check**, not mechanism efficacy, predictive validation, strategy simulation or alpha evidence.
+
+```yaml
+research_id: BTC_PERP_FUNDING_PRESSURE_v1
+mechanism: derivatives_leverage_pressure
+phase: DATA_PROVENANCE_AND_TIME_QUALITY_GATE
+status: DATA_AUDIT_PASSED_MECHANISM_NOT_TESTED
+archive_months: 48
+period: "2020-01-01..2023-12-31"
+expected_settlements: 4383
+observed_settlements: 4383
+unique_raw_settlement_times: 4383
+unique_nominal_settlement_slots: 4383
+issues: []
+max_timestamp_delay_ms: 47
+canonical_csv_sha256: "159050d8818298c777f9ac1290530aecc01a01859d209df9d39c306a4b5eb977"
+strategy_implemented: false
+strategy_backtest_allowed: false
+holdout_evaluated: false
+trading_allowed: false
+```
+
+- Checks include 48 monthly ZIP archives / SHA256, strict CSV schema, 8h funding interval / nominal UTC slots and bounded 0–100ms post-slot offset; no imputations or silent repairs.
+- User-run audit reports **2,150 on-grid timestamps**, **2,233 timestamps offset +1..+47ms**, no negative delays, no missing or collided nominal slots, no issues. By year: 2020 = 1,098; 2021–2023 = 1,095 each.
+- Funding sign distribution: 3,793 positive settlements and 590 negative; these are **funding events**, not independent trading signals, and do not prove leverage crowding or spot return predictability.
+- Local canonical CSV itself and its source ZIPs were **not uploaded** in this review; SHA256 is a provenance identifier from the audit JSON, not an independently reproduced hash.
+- **Decision:** close Phase 0 data remediation. The next *separately reviewed* task may test whether extreme positive *settled and known* funding predicts **future BTC spot direction/downside beyond trailing return and volatility**, using 2020–2021 for fixed calibration and 2022–2023 for evaluation. Audit timestamps do not prove data publication latency: any joined signal must use a conservative, causal availability lag.
+- **Stop rules:** if Phase 1 lacks independent regime/event counts, useful incremental evidence, or properly causal timestamp joins, stop/archive. Do not optimize thresholds, reopen archived trend/volatility mechanisms, unseal 2024/2025, or perform a strategy backtest under this audit approval.

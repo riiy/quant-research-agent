@@ -13,7 +13,7 @@ from unittest.mock import patch
 import zipfile
 
 from quant_research_agent.funding_audit import (
-    EXPECTED_ROWS, FundingAuditError, SCHEMA, audit_rows, load_verified_archive,
+    EXPECTED_ROWS, MAX_POST_SETTLEMENT_DELAY_MS, FundingAuditError, SCHEMA, audit_rows, load_verified_archive,
     main, months, read_month, run_audit,
 )
 
@@ -90,8 +90,66 @@ class AuditTests(unittest.TestCase):
             kinds = {i['issue'] for i in out['issues']}
             self.assertIn('DUPLICATE_SETTLEMENT_TIMES', kinds)
             self.assertIn('MISSING_EXPECTED_SETTLEMENTS', kinds)
-            self.assertFalse((root/'funding'/'BTCUSDT-funding-2020-2023.csv').exists())
+            self.assertFalse((root/'funding'/'BTCUSDT-funding-2020-2023.v2.csv').exists())
             self.assertEqual(main(['--home', str(root), 'audit', '--offline']), 2)
+
+    def test_realistic_positive_jitter_passes_without_rewriting_raw_stamps(self):
+        def jitter(_month, rows):
+            # Deterministic offsets including the largest observed real-data offset.
+            pattern = (0, 1, 2, 7, 15, 32, 47)
+            return [(stamp + pattern[i % len(pattern)], interval, rate)
+                    for i, (stamp, interval, rate) in enumerate(rows)]
+        with TemporaryDirectory() as t:
+            root = Path(t)
+            populate(root, mutation=jitter)
+            # Keep an original v1 failed report: new version cannot overwrite it.
+            legacy = root/'funding'/'BTCUSDT-funding-2020-2023.audit.json'
+            legacy.write_text('original v1 failure report\n', encoding='utf-8')
+            first = run_audit(root, offline=True)
+            self.assertEqual(first['status'], 'DATA_AUDIT_PASSED_MECHANISM_NOT_TESTED')
+            self.assertEqual(first['issues'], [])
+            report = json.loads(Path(first['report']).read_text())
+            timing = report['timestamp_alignment']
+            self.assertEqual(timing['maximum_offset_ms'], 47)
+            self.assertEqual(timing['minimum_offset_ms'], 0)
+            self.assertGreater(timing['nonzero_offset_rows'], 0)
+            self.assertEqual(report['unique_nominal_settlement_slots'], EXPECTED_ROWS)
+            self.assertEqual(report['protocol'], 'BTC_PERP_FUNDING_PRESSURE_v2_timestamp_jitter_audit_2020_2023')
+            self.assertEqual(legacy.read_text(), 'original v1 failure report\n')
+            self.assertIn('.audit.v2.json', first['report'])
+            with Path(first['canonical_csv']).open(newline='') as f:
+                records = list(csv.DictReader(f))
+            original_first = rows_for_month('2020-01')
+            self.assertEqual(int(records[1]['calc_time']), original_first[1][0] + 1)
+            self.assertEqual(run_audit(root, offline=True), first)
+
+    def test_positive_100ms_max_tolerance_and_101ms_rejected(self):
+        rows = [row for month in months() for row in rows_for_month(month)]
+        stamp, interval, rate = rows[42]
+        rows[42] = (stamp + MAX_POST_SETTLEMENT_DELAY_MS, interval, rate)
+        good, _ = audit_rows(rows, [])
+        self.assertEqual(good['status'], 'DATA_AUDIT_PASSED_MECHANISM_NOT_TESTED')
+        rows[42] = (stamp + MAX_POST_SETTLEMENT_DELAY_MS + 1, interval, rate)
+        bad, _ = audit_rows(rows, [])
+        self.assertEqual(bad['status'], 'STOP_DATA_AUDIT_FAILED')
+        self.assertIn('OFF_8H_UTC_GRID', [i['issue'] for i in bad['issues']])
+
+    def test_negative_offset_and_distinct_times_same_slot_rejected(self):
+        rows = [row for month in months() for row in rows_for_month(month)]
+        stamp, interval, rate = rows[32]
+        rows[32] = (stamp - 1, interval, rate)
+        bad, _ = audit_rows(rows, [])
+        self.assertIn('OFF_8H_UTC_GRID', [i['issue'] for i in bad['issues']])
+        # Two raw events +1/+2ms to same nominal slot cannot pass.
+        rows = [row for month in months() for row in rows_for_month(month)]
+        stamp, interval, rate = rows[32]
+        rows[32] = (stamp + 1, interval, rate)
+        rows[33] = (stamp + 2, interval, rate)
+        collision, _ = audit_rows(rows, [])
+        self.assertIn('DUPLICATE_NOMINAL_SETTLEMENT_SLOTS',
+                      [i['issue'] for i in collision['issues']])
+        self.assertIn('MISSING_EXPECTED_SETTLEMENTS',
+                      [i['issue'] for i in collision['issues']])
 
     def test_missing_cache_offline_never_networks(self):
         with TemporaryDirectory() as t:
@@ -121,7 +179,8 @@ class AuditTests(unittest.TestCase):
         report, _=audit_rows(rows, [])
         self.assertEqual(report['status'],'STOP_DATA_AUDIT_FAILED')
         kinds={x['issue'] for x in report['issues']}
-        self.assertTrue({'OFF_8H_UTC_GRID','NON_8H_INTERVAL','MISSING_EXPECTED_SETTLEMENTS'} <= kinds)
+        self.assertTrue({'OFF_8H_UTC_GRID','NON_8H_INTERVAL'} <= kinds)
+        self.assertNotIn('MISSING_EXPECTED_SETTLEMENTS', kinds)  # nominal slot still present
 
     def test_end_exclusive_and_read_only_2023(self):
         self.assertEqual(list(months())[-1],'2023-12')

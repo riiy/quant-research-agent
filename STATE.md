@@ -171,3 +171,15 @@ trading_allowed: false
 **Gate:** any unresolved provenance or timestamp inconsistency -> stop mechanism testing. If data passes, freeze a distinct, preregistered *mechanism-only* test: calibrate extreme positive funding using 2020–2021, evaluate 2022–2023 post-settlement BTC spot returns/downside risk against lagged-price/volatility controls. Must verify time availability and avoid 2024/2025 data. Predicting volatility is insufficient to grant backtest or trading permission.
 
 **Repository authority:** implement on a feature branch and PR only; owner alone decides merge. No direct `main` write.
+
+### 2026-11-17 timestamp-grid diagnosis — audit protocol v2 proposed
+
+The user ran an independent **read-only diagnostic** on all locally cached 2020–2023 BTCUSDT funding archives. Its reported results:
+
+- **4,383 raw records**; exact 4,383 unique nominal 8-hour slots; `missing_nominal_slots=0`, `extra_nominal_slots=0`, `slot_collisions=0`.
+- Raw settlement timestamp offsets relative to nominal UTC 00:00/08:00/16:00: **2,150 exactly on the slot, 2,233 positive offsets of +1 to +47 milliseconds**; `negative_offsets=0`, `maximum_absolute_offset_ms=47`.
+- The original v1 audit incorrectly treated each millisecond shift as *both* a missing nominal slot and an unexpected raw timestamp, yielding three linked issue counts of 2,233. This is a **strict-equality audit artifact**, not evidence of 2,233 missing settlements.
+- **Auditing rule correction**, not a trading/model parameter: compare to nominal slot with a fixed **0–100 ms post-slot tolerance**; check duplicates on **both original raw timestamp and nominal slot**, full coverage, non-8h intervals, chronology, monthly SHA256 and CSV contract. Preserve original `calc_time` in the canonical export and never infer availability before actual publication.
+- Retain old failed `BTCUSDT-funding-2020-2023.audit.json` unchanged; new v2 outputs `BTCUSDT-funding-2020-2023.audit.v2.json` and `BTCUSDT-funding-2020-2023.v2.csv` (only if clean).
+- **Status:** `TIMESTAMP_JITTER_DIAGNOSED_AUDIT_V2_SYNTHETIC_TESTED_REAL_RECHECK_PENDING`. Eleven offline unittest cases pass in the development environment (including 47ms allowed, 100ms boundary, 101ms rejected, negative offset and nominal-slot collision). Source data **not independently rerun** against v2 in authoring environment.
+- **Next bounded action:** operator runs `quant-funding audit --offline` from the PR branch, submits **v2** audit JSON. Only an actual v2 real-data pass can authorize a separately reviewed mechanism test; 2024/2025 remain sealed. No trading backtest.

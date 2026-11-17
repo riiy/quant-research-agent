@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 import hashlib
@@ -28,9 +29,14 @@ SCHEMA = ("calc_time", "funding_interval_hours", "last_funding_rate")
 HOURS = (0, 8, 16)
 MONTHLY_MAX_BYTES = 8_000_000
 EXPECTED_INTERVAL_HOURS = 8
+# Engineering tolerance for archive settlement timestamp jitter. The user's
+# real-data diagnostic on 2020-2023 found 0..47 ms, without negative offsets.
+# This 100 ms ceiling is a data-quality rule, NOT a strategy parameter.
+MAX_POST_SETTLEMENT_DELAY_MS = 100
+STEP_MS = EXPECTED_INTERVAL_HOURS * 60 * 60 * 1000
 EXPECTED_DAYS = (END_EXCLUSIVE - FIRST).days
 EXPECTED_ROWS = EXPECTED_DAYS * 3
-PROTOCOL = "BTC_PERP_FUNDING_PRESSURE_v1_data_audit_2020_2023"
+PROTOCOL = "BTC_PERP_FUNDING_PRESSURE_v2_timestamp_jitter_audit_2020_2023"
 
 
 class FundingAuditError(ValueError):
@@ -145,38 +151,57 @@ def read_month(payload: bytes, month: str) -> list[tuple[int, int, str]]:
 
 
 def audit_rows(rows: list[tuple[int, int, str]], archive_meta: list[dict]) -> tuple[dict, list[tuple[int, int, str]]]:
-    """No silent dedup, data padding, or interval repair; emit explicit failure diagnostics."""
+    """Validate raw event time against a nominal settlement slot; never rewrite it.
+
+    Binance's archived calc_time is an actual millisecond timestamp which can
+    occur shortly AFTER the 8-hour settlement boundary. For coverage checks
+    only, map to the nearest nominal 8-hour slot. Reject negative or >100 ms
+    shifts, collisions between distinct raw events, gaps and non-8h intervals.
+    """
     issues: list[dict] = []
-    seen: set[int] = set()
-    duplicate_times = []
+    seen_raw: set[int] = set()
+    seen_nominal: set[int] = set()
+    duplicate_raw = []
+    duplicate_nominal = []
     off_grid_times = []
     inconsistent_intervals = []
+    offset_counts: Counter[int] = Counter()
     out_of_order_count = 0
     prev = -1
     for stamp, interval, _ in rows:
-        if stamp in seen:
-            duplicate_times.append(stamp)
-        seen.add(stamp)
+        if stamp in seen_raw:
+            duplicate_raw.append(stamp)
+        seen_raw.add(stamp)
         if stamp <= prev:
             out_of_order_count += 1
         prev = stamp
-        dt = datetime.fromtimestamp(stamp / 1000, tz=timezone.utc)
-        if (dt.hour not in HOURS or dt.minute or dt.second or dt.microsecond):
-            off_grid_times.append(stamp)
+        # Integer milliseconds avoid float precision when assigning slots.
+        nominal = ((stamp + STEP_MS // 2) // STEP_MS) * STEP_MS
+        offset = stamp - nominal
+        offset_counts[offset] += 1
+        if nominal in seen_nominal:
+            duplicate_nominal.append({"slot_ms": nominal, "time_ms": stamp})
+        seen_nominal.add(nominal)
+        if not 0 <= offset <= MAX_POST_SETTLEMENT_DELAY_MS:
+            off_grid_times.append({"time_ms": stamp, "nominal_slot_ms": nominal,
+                                   "offset_ms": offset})
         if interval != EXPECTED_INTERVAL_HOURS:
             inconsistent_intervals.append({"time_ms": stamp, "hours": interval})
+
     expected_stamps = set()
     current = datetime(2020, 1, 1, tzinfo=timezone.utc)
     while current.date() < END_EXCLUSIVE:
         for h in HOURS:
             expected_stamps.add(int(current.replace(hour=h).timestamp() * 1000))
         current += timedelta(days=1)
-    missing = sorted(expected_stamps - seen)
-    unexpected = sorted(seen - expected_stamps)
+    missing = sorted(expected_stamps - seen_nominal)
+    unexpected = sorted(seen_nominal - expected_stamps)
+
     def issue_if(name: str, count: int, example):
         if count:
             issues.append({"issue": name, "count": count, "examples": example[:5]})
-    issue_if("DUPLICATE_SETTLEMENT_TIMES", len(duplicate_times), duplicate_times)
+    issue_if("DUPLICATE_SETTLEMENT_TIMES", len(duplicate_raw), duplicate_raw)
+    issue_if("DUPLICATE_NOMINAL_SETTLEMENT_SLOTS", len(duplicate_nominal), duplicate_nominal)
     issue_if("MISSING_EXPECTED_SETTLEMENTS", len(missing), missing)
     issue_if("UNEXPECTED_SETTLEMENT_TIMES", len(unexpected), unexpected)
     issue_if("OFF_8H_UTC_GRID", len(off_grid_times), off_grid_times)
@@ -184,6 +209,7 @@ def audit_rows(rows: list[tuple[int, int, str]], archive_meta: list[dict]) -> tu
     issue_if("NOT_STRICTLY_CHRONOLOGICAL", out_of_order_count, [out_of_order_count])
     if len(rows) != EXPECTED_ROWS:
         issues.append({"issue": "UNEXPECTED_ROW_COUNT", "expected": EXPECTED_ROWS, "actual": len(rows)})
+
     counts = {str(y): 0 for y in range(2020, 2024)}
     negative = positive = zero = 0
     for stamp, _interval, rate in rows:
@@ -194,6 +220,7 @@ def audit_rows(rows: list[tuple[int, int, str]], archive_meta: list[dict]) -> tu
         negative += sign < 0
         positive += sign > 0
         zero += sign == 0
+
     report = {
         "protocol": PROTOCOL,
         "market": "BTCUSDT USD-M perpetual funding settlements",
@@ -202,7 +229,18 @@ def audit_rows(rows: list[tuple[int, int, str]], archive_meta: list[dict]) -> tu
         "status": "DATA_AUDIT_PASSED_MECHANISM_NOT_TESTED" if not issues else "STOP_DATA_AUDIT_FAILED",
         "expected_settlements": EXPECTED_ROWS,
         "observed_rows": len(rows),
-        "unique_settlement_times": len(seen),
+        "unique_settlement_times": len(seen_raw),
+        "unique_nominal_settlement_slots": len(seen_nominal),
+        "timestamp_alignment": {
+            "slot_ms": STEP_MS,
+            "rule": "nearest 8h UTC slot; actual calc_time must be 0..100ms after nominal slot",
+            "max_post_settlement_delay_ms": MAX_POST_SETTLEMENT_DELAY_MS,
+            "offset_distribution_ms": {str(k): offset_counts[k] for k in sorted(offset_counts)},
+            "nonzero_offset_rows": sum(v for k, v in offset_counts.items() if k != 0),
+            "minimum_offset_ms": min(offset_counts, default=None),
+            "maximum_offset_ms": max(offset_counts, default=None),
+            "raw_calc_time_preserved": True,
+        },
         "yearly_counts": counts,
         "sign_counts": {"positive": positive, "negative": negative, "zero": zero},
         "checks": {"sha256_monthly_archives": True, "header_contract": SCHEMA,
@@ -211,10 +249,14 @@ def audit_rows(rows: list[tuple[int, int, str]], archive_meta: list[dict]) -> tu
         "issues": issues,
         "archives": archive_meta,
         "limitations": (
-            "Funding payments are observed at settlement time, not at the start of their "
-            "funding period; signals must use only earlier completed settlements. "
-            "Funding rate alone is not direct open interest, leverage, or liquidation data. "
-            "No spot prices, predictive claim, trades, fees or holdout are inspected here."
+            "Funding payments are stamped at settlement, not at the start of their "
+            "funding period. The audit checks nominal 8h slot membership within "
+            "100ms positive jitter but preserves raw calc_time in canonical output. "
+            "Funding rates must not be assumed to be knowable before their raw "
+            "timestamp or before actual publication; later signal tests must "
+            "account for availability. Funding rate alone is not direct open "
+            "interest, leverage, or liquidation data. No spot prices, predictive "
+            "claim, trades, fees or holdout are inspected here."
         ),
     }
     return report, rows
@@ -231,8 +273,8 @@ def run_audit(root: Path, *, offline: bool = False) -> dict:
     report, rows = audit_rows(collected, archives)
     out_dir = root / "funding"
     out_dir.mkdir(parents=True, exist_ok=True)
-    report_path = out_dir / "BTCUSDT-funding-2020-2023.audit.json"
-    data_path = out_dir / "BTCUSDT-funding-2020-2023.csv"
+    report_path = out_dir / "BTCUSDT-funding-2020-2023.audit.v2.json"
+    data_path = out_dir / "BTCUSDT-funding-2020-2023.v2.csv"
     if report["status"] == "DATA_AUDIT_PASSED_MECHANISM_NOT_TESTED":
         # Canonical output is made only on clean data, in immutable original order.
         buf = io.StringIO(newline="")
@@ -242,8 +284,8 @@ def run_audit(root: Path, *, offline: bool = False) -> dict:
             writer.writerow(row)
         data = buf.getvalue().encode("utf-8")
         report["canonical_csv_sha256"] = sha256_bytes(data)
-        # Both snapshots are versioned by their source-checksum list; refuse
-        # silent changes if a prior canonical snapshot exists.
+        # v2 names preserve the original v1 failed report and any v1 snapshot.
+        # Never silently replace a previously published v2 snapshot.
         if data_path.exists() and data_path.read_bytes() != data:
             raise FundingAuditError("Existing canonical funding CSV changed; stop and inspect upstream archives")
         if not data_path.exists():

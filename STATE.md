@@ -148,3 +148,26 @@ holdout_evaluated: false
 
 **Next action:** stop this candidate and avoid further model calls for the same volatility mechanism. Reconsider new economic mechanisms or additional data only if a specific decision-relevant hypothesis can be stated.
 
+
+## BTC perpetual funding pressure — Phase 0 data audit proposed (2026-11-17)
+
+```yaml
+research_id: BTC_PERP_FUNDING_PRESSURE_v1
+mechanism: derivatives_leverage_pressure
+market: BTCUSDT USD-M perpetual funding (signal source), BTCUSDT spot (later target)
+phase: DATA_PROVENANCE_AND_TIME_QUALITY_GATE
+status: IMPLEMENTED_SYNTHETIC_TESTED_REAL_BINANCE_AUDIT_PENDING
+history_range: "2020-01..2023-12"
+strategy_implemented: false
+strategy_backtest_allowed: false
+holdout_evaluated: false
+trading_allowed: false
+```
+
+**Why distinct:** periodic funding payments proxy futures premium and potential leveraged-demand pressure, unlike the archived BTC trend and binary volatility rules. They are not observations of open interest, position sizes, forced liquidation or leverage themselves. Kim (2026), `10.1016/j.jempfin.2026.101779`, finds incremental information for *BTC volatility*, not net BTC spot return predictability.
+
+**Bounded Phase 0:** `quant-funding audit` fetches exactly 48 monthly Binance USD-M `BTCUSDT` funding archives and SHA256 checksums for 2020–2023; validates documented ZIP fields `calc_time,funding_interval_hours,last_funding_rate`, UTC millisecond settlement times, 8-hour grid (00/08/16 UTC), duplicates, missing slots, unexpected intervals and archive chronology. It does not impute or silently repair. Expected 1461 days / 4383 settlements; if archive differs, diagnose rather than assume a complete dataset. It produces immutable local CSV and audit JSON only on successful coverage checks, with failed coverage reported separately. Eight offline synthetic tests passed; **real Binance audit has not run in the authoring environment**.
+
+**Gate:** any unresolved provenance or timestamp inconsistency -> stop mechanism testing. If data passes, freeze a distinct, preregistered *mechanism-only* test: calibrate extreme positive funding using 2020–2021, evaluate 2022–2023 post-settlement BTC spot returns/downside risk against lagged-price/volatility controls. Must verify time availability and avoid 2024/2025 data. Predicting volatility is insufficient to grant backtest or trading permission.
+
+**Repository authority:** implement on a feature branch and PR only; owner alone decides merge. No direct `main` write.

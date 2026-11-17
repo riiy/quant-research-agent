@@ -98,7 +98,7 @@ Live literature search, autonomous code execution, multi-market agents, local GP
 
 ## Discovery funnel v2 — improvement scoped after MVP acceptance (2026-11-16)
 
-`discovery_upgrade: IMPLEMENTED_OFFLINE_TESTED_REAL_API_PENDING`
+`discovery_upgrade: REAL_API_IDEA_GENERATED_MECHANISM_KILL_TEST_PROPOSED`
 
 - A source registry contains six manually verified academic references with DOIs, study universes, and transfer limitations (including contrary evidence for illiquid-asset reversal in a BTC-only market).
 - Fixed screening checks **economic mechanism, source relevance, data availability, predeclared falsifier and mechanism-level novelty**. The numeric score is triage only, not estimated alpha.
@@ -108,5 +108,7 @@ Live literature search, autonomous code execution, multi-market agents, local GP
 - Investor attention is blocked without external signal data; cross-sectional reversal is blocked due to BTC transfer mismatch. No 2025 holdout, simulated trades, parameter tuning or execution engine changes.
 - The discovery funnel has only offline/mocked tests thus far; real paid gateway behavior and the quality of any generated idea are **not yet verified**.
 
-**Next bounded action:** run `quant-ideas preview`, then at most one `quant-ideas discover --mode api` call. Evaluate whether the returned idea has a genuinely distinct, executable economic mechanism, a risk/exposure-matched benchmark, and a kill test. Stop if it does not. Do not expand the infrastructure to fabricate more candidates.
+**Latest v2 evidence:** the user ran one real API discovery on 2026-11-16 and reported idea `4b7cb9282852` (`volatility_exposure`), status `AWAITING_RULE_DESIGN_NOT_BACKTESTED`. It proposes a 30-day historical volatility and fixed calibration-median threshold. This is a research note only; no BTC volatility mechanism has been verified.
+
+**Proposed next bounded action (feature PR, pending owner approval):** run `quant-ideas kill-test --idea-id 4b7cb9282852` using **only 2018–2023 daily OHLCV**. Freeze 2018–2020 calibration threshold and compare 2021–2023 next-day absolute returns and relative compensation. An explicit >1.20 risk ratio, one-sided block bootstrap >1, 100+ observations per regime, and no superior high-vol reward-per-risk are required to pass the *mechanism screen only*. Failure/inconclusive => stop this hypothesis; do not tune or open the 2024/2025 data. A pass is not trade proof and needs a separately reviewed fixed execution protocol. The proposed test adds no new LLM calls, backtest engine, or database mutation.
 

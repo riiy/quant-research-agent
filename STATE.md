@@ -221,7 +221,7 @@ trading_allowed: false
 research_id: BTC_PERP_FUNDING_PRESSURE_v1
 mechanism: derivatives_leverage_pressure
 phase: PHASE_1_INCREMENTAL_INFORMATION_KILL_TEST
-status: FROZEN_IMPLEMENTED_SYNTHETIC_TESTED_REAL_DATA_PENDING
+status: STOP_INSUFFICIENT_INCREMENTAL_INFORMATION
 calibration: "2020-01-01..2021-12-31"
 evaluation: "2022-01-01..2023-12-31"
 funding_provenance_sha256: "159050d8818298c777f9ac1290530aecc01a01859d209df9d39c306a4b5eb977"
@@ -239,5 +239,37 @@ trading_allowed: false
 - For outcome day `t` in 2022–2023, the signal **and** price control features stop at `t−2` (full calendar-day availability margin); target is BTC spot `log(close[t]/close[t−1])`. Spot 7-day trailing log return and 30-day realized log-return standard deviation are binned by calibration-only tertile boundaries. **3×3 price bins crossed with evaluation year** yield within-year event/non-event comparisons. This matching is retrospective, not investable.
 - Test two predeclared endpoints with **Bonferroni one-sided alpha 0.025 each**: adjusted daily log-return difference <= -0.003 with 97.5% block-bootstrap upper <0; OR increased probability of daily log-return <= -0.02 by >=0.05 with 97.5% lower >0. Fixed 14-day circular block bootstrap ×1000, seed 20261117, at least 950 valid draws; the matching effect must have correct sign **in both 2022 and 2023**.
 - Minimum 40 extreme event days, 10 in each year, eight distinct 14-day blocks, and 10 contemporaneous non-event controls per event/year×price stratum. Sparse or unstable evidence => `STOP_INSUFFICIENT_INCREMENTAL_INFORMATION`, archive without threshold/lookback/horizon rescues.
-- All input provenance and actual metrics are recorded in immutable local `runtime/funding/BTCUSDT-funding-phase1-mechanism-v1.json`. **No real Phase 1 outcomes have yet been observed.** Fourteen synthetic unit tests passed in development; actual GitHub CI and user real-data run are separate.
+- The mechanism test is reproducible through immutable local `runtime/funding/BTCUSDT-funding-phase1-mechanism-v1.json`. **The user subsequently ran the real 2022–2023 Phase 1 evaluation, resulting in zero extreme-positive funding events and a frozen protocol stop.** Fourteen synthetic unit tests and GitHub CI passed; the original spot/funding CSVs were not independently re-evaluated in this PR.
 - Mechanism-only pass => `PASS_INCREMENTAL_INFORMATION_ONLY`, **not** trade alpha or strategy permission. Explicit separate owner review required for any later cost-, exposure- and risk-matched strategy research.
+
+### Phase 1 real-data Kill Test — no event support; archive the fixed rule (2026-11-17)
+
+The user executed `quant-funding-kill` on their local verified 2020–2023 data and supplied `BTCUSDT-funding-phase1-mechanism-v1.json`. This report is local and **not** committed. The result follows the unmodified, previously frozen Phase 1 protocol.
+
+```yaml
+research_id: BTC_PERP_FUNDING_PRESSURE_v1
+mechanism: derivatives_leverage_pressure
+phase: PHASE_1_MECHANISM_ONLY
+protocol: BTC_PERP_FUNDING_PRESSURE_v1_mechanism_frozen_2026-11-17
+calibration: "2020-01-01..2021-12-31"
+evaluation: "2022-01-01..2023-12-31"
+calibration_extreme_positive_funding_threshold: 0.0006289833333333333
+evaluation_days: 730
+event_days: 0
+event_days_by_year: {"2022": 0, "2023": 0}
+event_14day_calendar_blocks: 0
+valid_bootstrap_replicates: 0
+adjusted_log_return_diff: null
+adjusted_downside_probability_diff: null
+phase1_status: STOP_INSUFFICIENT_INCREMENTAL_INFORMATION
+decision: ARCHIVE_FIXED_EXTREME_POSITIVE_FUNDING_CANDIDATE
+strategy_implemented: false
+strategy_backtest_allowed: false
+holdout_evaluated: false
+trading_allowed: false
+```
+
+- **Failure mode:** the fixed, calibration-only nearest-rank 90th percentile threshold of mean daily funding was **never exceeded** in the 730 evaluation days. The frozen 40 total events, 10 per year and eight separate 14-day blocks gates all fail. Price/volatility-adjusted outcomes, year stability and bootstrap confidence intervals are **not estimable**, rather than negative or statistically insignificant.
+- The funding CSV SHA256 supplied in the report is `159050d8818298c777f9ac1290530aecc01a01859d209df9d39c306a4b5eb977`, matching the previously frozen Phase 0 canonical digest. Spot 2020–2023 prefix SHA256 in this report: `fa5113d1b946ed19ab0eb48d32e05317ef944a6ba12bee79680ba7a247237def`. Neither dataset was independently recomputed here.
+- **Interpretation:** zero events show inadequate out-of-period *support* and possible funding-regime distribution shift. This does **not** establish the absence of all funding predictive information or refute leverage-pressure economics; it refutes the *testability* of this frozen absolute-threshold candidate in 2022–2023.
+- **Stop:** archive the **exact candidate and protocol**. Do not lower the percentile, switch to rolling quantiles, reverse the sign, change horizons, extend the evaluation interval or peek at 2024/2025 to rescue it. Do not implement strategy trading or historical P&L. Revisit the broader derivatives-pressure mechanism only on genuinely new, independently sourced economic evidence and a separately preregistered research question—not by retuning this failed experiment.

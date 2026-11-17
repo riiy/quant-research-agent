@@ -14,6 +14,7 @@ quant-agent = "quant_research_agent.cli:main"
 quant-ideas = "quant_research_agent.idea_funnel:main"
 quant-funding = "quant_research_agent.funding_audit:main"
 quant-funding-kill = "quant_research_agent.funding_mechanism:main"
+quant-attention-kill = "quant_research_agent.attention_kill_test:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

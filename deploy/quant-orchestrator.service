@@ -1,0 +1,16 @@
+[Unit]
+Description=Research-only quant orchestrator (single bounded tick)
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=quantresearch
+WorkingDirectory=/opt/quant-research-agent
+Environment=QUANT_HOME=/opt/quant-research-agent/runtime
+ExecStart=/opt/quant-research-agent/.venv/bin/quant-orchestrator --home /opt/quant-research-agent/runtime tick --policy /etc/quant-orchestrator.policy.json
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/quant-research-agent/runtime
+TimeoutStartSec=180

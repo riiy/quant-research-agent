@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly safe quant research orchestration tick
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=120
+Unit=quant-orchestrator.service
+
+[Install]
+WantedBy=timers.target

@@ -15,6 +15,7 @@ quant-ideas = "quant_research_agent.idea_funnel:main"
 quant-funding = "quant_research_agent.funding_audit:main"
 quant-funding-kill = "quant_research_agent.funding_mechanism:main"
 quant-attention-kill = "quant_research_agent.attention_kill_test:main"
+quant-orchestrator = "quant_research_agent.orchestrator:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

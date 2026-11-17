@@ -5,6 +5,8 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -214,6 +216,53 @@ class ControllerTest(unittest.TestCase):
                 outcome = self.do_tick()
         self.assertEqual(outcome["status"], "AWAITING_HUMAN_PROTOCOL_APPROVAL")
         self.assertEqual(outcome["result"]["eligible_mechanisms"], ["new_external_demand"])
+
+    def run_cli(self, *args):
+        stdout = StringIO()
+        with redirect_stdout(stdout):
+            code = a.main(["--home", str(self.root), *args])
+        return code, json.loads(stdout.getvalue())
+
+    def test_cli_status_on_fresh_db_has_no_top_level_status(self):
+        code, snapshot = self.run_cli("status")
+        self.assertEqual(code, 0)
+        self.assertNotIn("status", snapshot)
+        self.assertIsNone(snapshot["last_heartbeat"])
+        self.assertEqual(snapshot["tasks"], [])
+
+    def test_cli_status_after_completed_task_does_not_crash(self):
+        tick_code, outcome = self.run_cli("tick", "--policy", str(self.config))
+        self.assertEqual(tick_code, 0)
+        self.assertEqual(outcome["status"], "NO_NEW_FEASIBLE_MECHANISMS")
+        status_code, snapshot = self.run_cli("status")
+        self.assertEqual(status_code, 0)
+        self.assertNotIn("status", snapshot)
+        self.assertEqual(snapshot["last_heartbeat"]["outcome"], "NO_NEW_FEASIBLE_MECHANISMS")
+        self.assertEqual(snapshot["tasks"][0]["status"], "NO_NEW_FEASIBLE_MECHANISMS")
+        idle_code, idle = self.run_cli("tick", "--policy", str(self.config))
+        self.assertEqual(idle_code, 0)
+        self.assertEqual(idle["status"], "IDLE_NO_APPROVED_TASKS")
+
+    def test_cli_acceptance_not_yet_is_nonzero_gate(self):
+        self.do_tick()
+        code, result = self.run_cli("acceptance", "--days", "7")
+        self.assertEqual(result["status"], "NOT_YET")
+        self.assertEqual(code, 1)
+
+    def test_cli_failed_and_missing_report_exit_nonzero(self):
+        path, task = self.make_report_task()
+        path.write_text("{}", encoding="utf-8")
+        code, result = self.run_cli("tick", "--policy", str(self.config))
+        self.assertEqual(result["status"], "FAILED_REVIEW_REQUIRED")
+        self.assertEqual(code, 1)
+        # Separate isolated task ID to check a missing, pinned input.
+        another = self.dir / "runtime-missing"
+        self.root = another
+        self.make_report_task()
+        (self.root / task["artifact"]).unlink()
+        code, result = self.run_cli("tick", "--policy", str(self.config))
+        self.assertEqual(result["status"], "BLOCKED_MISSING_INPUT")
+        self.assertEqual(code, 1)
 
 
 if __name__ == "__main__":

@@ -169,6 +169,33 @@ the mechanism gate passes. An inconclusive/failing gate should stop
 this idea rather than trigger lookback/threshold adjustment. The idea's
 database status is deliberately left unchanged pending human review.
 
+### Funding pressure: Phase 1 incremental-information Kill Test (research only)
+
+The Phase 0 v2 funding audit was **reported passed** for 2020–2023; Phase 1 tests exactly one distinct mechanism: whether **extreme positive settled BTC perpetual funding** predicts lower BTC spot daily returns or more downside **beyond lagged BTC price returns and realized volatility**.
+
+**Read the frozen protocol first:** [`docs/FUNDING_PHASE1_PROTOCOL.md`](docs/FUNDING_PHASE1_PROTOCOL.md). No re-optimization is permitted after inspecting the result.
+
+```bash
+pip install -e .
+quant-funding-kill
+# Override local runtime root only when needed:
+quant-funding-kill --home runtime
+```
+
+Required **local** inputs:
+
+- `runtime/funding/BTCUSDT-funding-2020-2023.audit.v2.json` (passed Phase 0 report);
+- `runtime/funding/BTCUSDT-funding-2020-2023.v2.csv` (must match Phase 0 frozen SHA256 `159050d8818298c777f9ac1290530aecc01a01859d209df9d39c306a4b5eb977`);
+- `runtime/data/BTCUSDT-1d.csv` (existing BTC spot daily OHLCV; *only* 2020–2023 rows are consumed).
+
+**Frozen calibration:** 2020–2021 daily mean of settled funding, extreme positive means above the **nearest-rank 90th percentile**. **Mechanism evaluation:** 2022–2023; next-day BTC close-to-close log returns measured on day t use only settled funding and price controls through **t−2**, with conservative full-day publication buffer. Price-only matching uses 2020–2021 fixed tertiles of 7-day return and 30-day volatility crossed with evaluation calendar year; it is a retrospective observational comparator, **not** an investable prediction model.
+
+Two predeclared endpoints, either may pass, each using multiplicity-adjusted one-sided 97.5% block-bootstrap bounds (14 days × 1,000 replicates): adjusted return <= **−0.3%** (upper bound <0), or adjusted probability of log-return loss <= −2% higher by **≥5 pp** (lower bound >0). Require ≥40 total events, ≥10 per year, ≥8 independent 14-day calendar blocks, ≥10 controls in each event stratum, ≥950 valid bootstrap replicates, and correct effect sign in both years. Failing any gate => stop instead of adjusting thresholds.
+
+Results are immutable at `runtime/funding/BTCUSDT-funding-phase1-mechanism-v1.json`, with spot/funding hashes and full comparisons. Status is **`STOP_INSUFFICIENT_INCREMENTAL_INFORMATION`** or **`PASS_INCREMENTAL_INFORMATION_ONLY`**; either way, this is **not** a strategy backtest and does not allow trading, account simulation, or 2024/2025 holdout access. A mechanism pass would require a separately reviewed cost-/risk-matched strategy test before any return claim.
+
+**Stage status:** implemented with synthetic test coverage; real historical funding + spot Phase 1 result **not yet run** by author.
+
 ### Funding pressure: Phase 0, data audit only
 
 `BTC_PERP_FUNDING_PRESSURE_v1` is a distinct economic-mechanism lead, **not** a new execution strategy. It uses the official Binance USD-M perpetual BTCUSDT **settled funding** history, not the spot klines or live open interest. Settlement data are not a direct leverage measurement.

@@ -214,3 +214,30 @@ trading_allowed: false
 - Local canonical CSV itself and its source ZIPs were **not uploaded** in this review; SHA256 is a provenance identifier from the audit JSON, not an independently reproduced hash.
 - **Decision:** close Phase 0 data remediation. The next *separately reviewed* task may test whether extreme positive *settled and known* funding predicts **future BTC spot direction/downside beyond trailing return and volatility**, using 2020–2021 for fixed calibration and 2022–2023 for evaluation. Audit timestamps do not prove data publication latency: any joined signal must use a conservative, causal availability lag.
 - **Stop rules:** if Phase 1 lacks independent regime/event counts, useful incremental evidence, or properly causal timestamp joins, stop/archive. Do not optimize thresholds, reopen archived trend/volatility mechanisms, unseal 2024/2025, or perform a strategy backtest under this audit approval.
+
+## BTC_PERP_FUNDING_PRESSURE_v1 — Phase 1 mechanism test proposed (2026-11-17)
+
+```yaml
+research_id: BTC_PERP_FUNDING_PRESSURE_v1
+mechanism: derivatives_leverage_pressure
+phase: PHASE_1_INCREMENTAL_INFORMATION_KILL_TEST
+status: FROZEN_IMPLEMENTED_SYNTHETIC_TESTED_REAL_DATA_PENDING
+calibration: "2020-01-01..2021-12-31"
+evaluation: "2022-01-01..2023-12-31"
+funding_provenance_sha256: "159050d8818298c777f9ac1290530aecc01a01859d209df9d39c306a4b5eb977"
+strategy_implemented: false
+strategy_backtest_allowed: false
+holdout_evaluated: false
+trading_allowed: false
+```
+
+**Economic mechanism under test:** funding is a *proxy* for BTC perp premium/potential leveraged-long crowding, not open interest or leverage itself. Distinct from archived momentum/trend and volatility-exposure families. Prior papers linking funding to volatility do **not** prove incremental next-day spot return or tail-risk predictability.
+
+**Frozen preregistration:** `docs/FUNDING_PHASE1_PROTOCOL.md` in this feature PR. No hyperparameter tuning, no trading simulation and no 2024/2025 accesses.
+
+- Daily funding = mean of all three verified settlements for UTC day; extreme positive iff the **t−2 day** mean exceeds the **2020–2021 nearest-rank 90th percentile** (strict >, positive-only threshold).
+- For outcome day `t` in 2022–2023, the signal **and** price control features stop at `t−2` (full calendar-day availability margin); target is BTC spot `log(close[t]/close[t−1])`. Spot 7-day trailing log return and 30-day realized log-return standard deviation are binned by calibration-only tertile boundaries. **3×3 price bins crossed with evaluation year** yield within-year event/non-event comparisons. This matching is retrospective, not investable.
+- Test two predeclared endpoints with **Bonferroni one-sided alpha 0.025 each**: adjusted daily log-return difference <= -0.003 with 97.5% block-bootstrap upper <0; OR increased probability of daily log-return <= -0.02 by >=0.05 with 97.5% lower >0. Fixed 14-day circular block bootstrap ×1000, seed 20261117, at least 950 valid draws; the matching effect must have correct sign **in both 2022 and 2023**.
+- Minimum 40 extreme event days, 10 in each year, eight distinct 14-day blocks, and 10 contemporaneous non-event controls per event/year×price stratum. Sparse or unstable evidence => `STOP_INSUFFICIENT_INCREMENTAL_INFORMATION`, archive without threshold/lookback/horizon rescues.
+- All input provenance and actual metrics are recorded in immutable local `runtime/funding/BTCUSDT-funding-phase1-mechanism-v1.json`. **No real Phase 1 outcomes have yet been observed.** Fourteen synthetic unit tests passed in development; actual GitHub CI and user real-data run are separate.
+- Mechanism-only pass => `PASS_INCREMENTAL_INFORMATION_ONLY`, **not** trade alpha or strategy permission. Explicit separate owner review required for any later cost-, exposure- and risk-matched strategy research.

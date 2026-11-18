@@ -24,9 +24,10 @@ def policy():
             "spot_path": "data/BTCUSDT-1d.csv"}
 
 
-def item(doi="10.1016/j.najef.2025.102441", title="Calendar effects on returns, volatility and higher moments: Evidence from crypto markets"):
+def item(doi="10.1016/j.najef.2025.102441", title="Day-of-the-week effects on Bitcoin spot daily returns",
+         abstract="<jats:p>We analyze day-of-the-week calendar effects on Bitcoin spot daily returns.</jats:p>"):
     return {"DOI": doi, "type": "journal-article", "title": [title],
-            "published": {"date-parts": [[2025, 1, 1]]}}
+            "published": {"date-parts": [[2025, 1, 1]]}, "abstract": abstract}
 
 
 def response(items=None):
@@ -54,7 +55,7 @@ class LoopTest(unittest.TestCase):
         self.assertEqual(x["status"], "BLOCKED_MISSING_SPOT")
         self.assertEqual(x["study_status"], "WAITING_DATA")
         st = a.status(self.root)
-        self.assertEqual(st["paper_counts"], [{"decision":"ELIGIBLE_TITLE_CUE_ONLY", "count":1}])
+        self.assertEqual(st["paper_counts"], [{"decision":"ELIGIBLE_FOR_FROZEN_TEMPLATE", "count":1}])
         self.assertEqual(st["studies"][0]["doi"], "10.1016/j.najef.2025.102441")
         self.assertFalse(st["trading_allowed"])
 
@@ -70,8 +71,8 @@ class LoopTest(unittest.TestCase):
         self.assertEqual(len(calls), 1)
 
     def test_paper_metadata_alone_not_empirical_validation(self):
-        papers = [item("10.1234/a", "Trading volume in Bitcoin weekend sessions"),
-                  item("10.1234/b", "Revisiting seasonality in cryptocurrencies")]
+        papers = [item("10.1234/a", "Trading volume in Bitcoin weekend sessions", abstract=None),
+                  item("10.1234/b", "Revisiting seasonality in cryptocurrencies", abstract=None)]
         x = self.go(raw=response(papers))
         self.assertEqual(x["status"], "EVIDENCE_ARCHIVED_NO_NEW_EXECUTABLE_STUDY")
         self.assertEqual(x["eligible_title_cues"], 0)
@@ -131,8 +132,9 @@ class LoopTest(unittest.TestCase):
             self.assertFalse(doc["trading_allowed"])
             self.assertEqual(doc["falsification"]["status"],"STOP_INSUFFICIENT_INCREMENTAL_INFORMATION")
             with patch.object(w, "run", side_effect=AssertionError("Second run forbidden")):
-                second=self.go(now=START+timedelta(days=1))
-            self.assertEqual(second["status"],"NO_NEW_EVIDENCE")
+                second=self.go(now=START+timedelta(days=1),
+                    fetcher=lambda _:self.fail("Saturated P1 must not poll Crossref"))
+            self.assertEqual(second["status"],"IDLE_TEMPLATE_SATURATED")
             st=a.status(self.root)
             self.assertEqual(st["studies"][0]["status"],"STOP_INSUFFICIENT_INCREMENTAL_INFORMATION")
             self.assertEqual(len(st["studies"]),1)
@@ -171,6 +173,61 @@ class LoopTest(unittest.TestCase):
             code=a.main(["--home",str(self.root),"status"])
         self.assertEqual(code,0)
         self.assertNotIn("status",json.loads(output.getvalue()))
+
+    def test_legacy_waiting_data_bad_paper_is_blocked_before_spot_backtest(self):
+        bad = item("10.1016/j.frl.2025.108661",
+                   "A crypto-stock weekend effect: Predicting Monday stock returns using weekend cryptocurrency returns",
+                   abstract=None)
+        first = self.go(raw=response([bad]))
+        self.assertEqual(first["status"], "EVIDENCE_ARCHIVED_NO_NEW_EXECUTABLE_STUDY")
+        # Simulate a previously title-only approved WAITING_DATA record.
+        db=a.connect(self.root)
+        with db:
+            db.execute("INSERT INTO studies(template_id,doi,status,created_at) VALUES(?,?,?,?)",
+                       (a.APPROVED_TEMPLATE, bad["DOI"], "WAITING_DATA", START.isoformat()))
+        db.close()
+        spot=self.root/"data/BTCUSDT-1d.csv"
+        spot.parent.mkdir(parents=True, exist_ok=True)
+        spot.write_text("mock spot")
+        with patch.object(w, "run", side_effect=AssertionError("Source mismatch must stop before prices")):
+            outcome=self.go(now=START+timedelta(hours=1),
+                            fetcher=lambda _:self.fail("No HTTP for waiting records"))
+        self.assertEqual(outcome["status"], "SOURCE_FIT_REVIEW_REQUIRED")
+        self.assertFalse(outcome["experiment_executed"])
+        self.assertEqual(a.status(self.root)["studies"][0]["status"], "SOURCE_FIT_REVIEW_REQUIRED")
+
+    def test_new_crossref_stock_target_paper_is_never_executed(self):
+        bad = item("10.1016/j.frl.2025.108661",
+                   "A crypto-stock weekend effect: Predicting Monday stock returns using weekend cryptocurrency returns",
+                   abstract="Weekend cryptocurrency returns predict Monday stock returns.")
+        with patch.object(w, "run", side_effect=AssertionError("Never execute")):
+            out=self.go(raw=response([bad]))
+        self.assertEqual(out["status"], "EVIDENCE_ARCHIVED_NO_NEW_EXECUTABLE_STUDY")
+        self.assertEqual(a.status(self.root)["paper_counts"][0]["decision"],
+                         "REJECT_TARGET_MISMATCH")
+        self.assertEqual(a.status(self.root)["studies"], [])
+
+    def test_explicit_title_without_abstract_requires_human_review(self):
+        paper=item(abstract=None)
+        with patch.object(w, "run", side_effect=AssertionError("Missing abstract must not auto-execute")):
+            out=self.go(raw=response([paper]))
+        self.assertEqual(out["status"], "EVIDENCE_ARCHIVED_NO_NEW_EXECUTABLE_STUDY")
+        self.assertEqual(a.status(self.root)["paper_counts"][0]["decision"],
+                         "NEEDS_HUMAN_SOURCE_REVIEW")
+
+    def test_cli_relevance_audit_no_network_and_historical_snapshot(self):
+        self.go(raw=response([item("10.1016/j.frl.2025.108661",
+            "A crypto-stock weekend effect: Predicting Monday stock returns using weekend cryptocurrency returns",
+            abstract=None)]))
+        output=StringIO()
+        with redirect_stdout(output):
+            code=a.main(["--home",str(self.root),"relevance-audit"])
+        self.assertEqual(code,0)
+        report=json.loads(output.getvalue())
+        self.assertEqual(report["status"], "SOURCE_FIT_AUDIT_COMPLETED")
+        self.assertEqual(report["paper_count"],1)
+        self.assertFalse(report["experiments_rerun"])
+        self.assertEqual(report["decision_counts"]["REJECT_TARGET_MISMATCH"],1)
 
     def test_paper_normalization_deduplication(self):
         papers=a.parse_papers(response([item(), item(doi="10.1016/J.NAJEF.2025.102441")]),20,START)

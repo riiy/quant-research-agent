@@ -18,6 +18,7 @@ import sys
 from urllib import parse, request
 
 from . import weekday_mechanism as weekday
+from . import source_fit
 
 SOURCE = "https://api.crossref.org/works"
 HOST = "api.crossref.org"
@@ -105,7 +106,7 @@ def fetch_crossref(p: dict) -> bytes:
     query = parse.urlencode({"query.bibliographic": p["search_query"],
                              "rows": str(p["max_results"]),
                              "filter": "type:journal-article",
-                             "select": "DOI,title,published,URL,type,created,indexed"})
+                             "select": "DOI,title,published,URL,type,created,indexed,abstract"})
     url = SOURCE + "?" + query
     req = request.Request(url, headers={"User-Agent": "quant-research-agent-p1/0.1 (+research-only; no bulk harvesting)",
                                         "Accept": "application/json"})
@@ -161,28 +162,24 @@ def parse_papers(raw: bytes, max_results: int, now: datetime) -> list[dict]:
             continue
         seen.add(doi)
         cleaned.append({"doi": doi, "url": "https://doi.org/" + doi,
-                        "title": title, "publication_year": year})
+                        "title": title, "publication_year": year,
+                        "abstract": item.get("abstract") if isinstance(item.get("abstract"), str) else None})
     return cleaned
 
 
-def classify(title: str) -> str:
-    """Title cue is NOT verification of the paper's empirical claims."""
-    low = title.lower()
-    crypto = any(x in low for x in ("bitcoin", "cryptocurrenc", "crypto market", "cryptoasset", "crypto-asset"))
-    weekday = any(x in low for x in ("day of the week", "day-of-the-week", "weekend", "weekday",
-                                     "calendar effect", "calendar anomal", "seasonality"))
-    returns = any(x in low for x in ("return", "predictab", "anomal", "calendar effect"))
-    return "ELIGIBLE_TITLE_CUE_ONLY" if crypto and weekday and returns else "REFERENCE_ONLY_NEEDS_REVIEW"
+def classify(title: str, abstract: str | None = None) -> str:
+    """Conservative source-to-frozen-test fit, NOT an empirical paper validation."""
+    return source_fit.assess_source(title, abstract)["decision"]
 
 
 def archived_study(db: sqlite3.Connection) -> sqlite3.Row | None:
     return db.execute("SELECT * FROM studies WHERE template_id=?", (APPROVED_TEMPLATE,)).fetchone()
 
 
-def _report_bytes(study: dict, source_digest: str, result: dict) -> bytes:
+def _report_bytes(study: dict, source_digest: str, result: dict, fit: dict) -> bytes:
     document = {"research_id": APPROVED_TEMPLATE, "evidence": study,
-                "discovery_source": "Crossref title/DOI metadata, NOT verified causal results",
-                "response_sha256": source_digest, "falsification": result,
+                "discovery_source": "Crossref title/abstract/DOI metadata, NOT verified causal results",
+                "response_sha256": source_digest, "source_fit": fit, "falsification": result,
                 "autonomous_discovery": True, "auto_generated_code": False,
                 "holdout_evaluated": False, "trading_allowed": False,
                 "account_simulation_allowed": False}
@@ -209,6 +206,27 @@ def execute_study(root: Path, db: sqlite3.Connection, now: datetime) -> dict:
         return {"status": "IDLE_NO_STUDY"}
     if row["status"] != "WAITING_DATA":
         return {"status": "IDLE_STUDY_ALREADY_RECORDED", "study_status": row["status"]}
+    # A historical WAITING_DATA record may have been claimed by the old title-
+    # only classifier. Recheck *verified original bytes* before accessing prices.
+    # No legacy result is rewritten or given another shot at the hypothesis.
+    from .source_fit_audit import verified_stored_paper
+    try:
+        verified = verified_stored_paper(root, db, row["doi"])
+    except (ValueError, OSError, json.JSONDecodeError) as exc:
+        with db:
+            db.execute("UPDATE studies SET status='FAILED_REVIEW_REQUIRED' "
+                       "WHERE template_id=? AND status='WAITING_DATA'", (APPROVED_TEMPLATE,))
+            log(db, now, "SOURCE_VERIFICATION_FAILED", {"reason": type(exc).__name__})
+        return {"status": "FAILED_REVIEW_REQUIRED", "reason": "ORIGINAL_SOURCE_NOT_VERIFIABLE"}
+    source_assessment = source_fit.assess_source(verified["title"], verified.get("abstract"))
+    if source_assessment["decision"] != source_fit.AUTO:
+        with db:
+            db.execute("UPDATE studies SET status='SOURCE_FIT_REVIEW_REQUIRED' "
+                       "WHERE template_id=? AND status='WAITING_DATA'", (APPROVED_TEMPLATE,))
+            log(db, now, "SOURCE_TO_TEST_GATE_BLOCKED",
+                {"doi": row["doi"], "assessment": source_assessment})
+        return {"status": "SOURCE_FIT_REVIEW_REQUIRED", "doi": row["doi"],
+                "source_fit": source_assessment, "experiment_executed": False}
     spot = root / "data/BTCUSDT-1d.csv"
     if not spot.is_file():
         return {"status": "BLOCKED_MISSING_SPOT", "study_status": "WAITING_DATA",
@@ -225,7 +243,7 @@ def execute_study(root: Path, db: sqlite3.Connection, now: datetime) -> dict:
         paper = db.execute("SELECT doi,title,publication_year,url,at,response_sha FROM papers WHERE doi=?", (row["doi"],)).fetchone()
         if paper is None:
             raise ValueError("Source paper unavailable; refusing unverifiable research")
-        raw = _report_bytes(dict(paper), paper["response_sha"], result)
+        raw = _report_bytes(dict(paper), paper["response_sha"], result, source_assessment)
         out = root / "agent/reports/BTC_WEEKDAY_INFORMATION_v1.json"
         write_immutable(out, raw)
         outcome = result["status"]
@@ -268,6 +286,11 @@ def cycle(root: Path, policy_path: Path, *, now: datetime | None = None,
                 db.execute("UPDATE studies SET status='INTERRUPTED_REVIEW_REQUIRED' WHERE template_id=?", (APPROVED_TEMPLATE,))
                 log(db, now, "INTERRUPTED_NO_RETRY", {"template": APPROVED_TEMPLATE})
             return {"status": "INTERRUPTED_REVIEW_REQUIRED"}
+        if pending:
+            # Only one frozen study can ever be run in P1. There is no purpose
+            # in repeatedly polling the same query after its terminal decision.
+            return {"status": "IDLE_TEMPLATE_SATURATED", "study_status": pending["status"],
+                    "network_requests": 0, "experiment_executed": False}
         last = db.execute("SELECT at FROM polls ORDER BY id DESC LIMIT 1").fetchone()
         if last and now - datetime.fromisoformat(last["at"]) < timedelta(hours=p["poll_interval_hours"]):
             return {"status": "IDLE_POLL_INTERVAL", "next_eligible_at":
@@ -308,12 +331,12 @@ def cycle(root: Path, policy_path: Path, *, now: datetime | None = None,
         with db:
             db.execute("UPDATE polls SET status='COMPLETED',response_sha=? WHERE id=?", (source_digest, poll_id))
             for paper in papers:
-                c = classify(paper["title"])
+                c = classify(paper["title"], paper.get("abstract"))
                 cur = db.execute("INSERT OR IGNORE INTO papers(doi,title,publication_year,url,at,response_sha,decision,research_template) VALUES(?,?,?,?,?,?,?,?)",
                                  (paper["doi"],paper["title"],paper["publication_year"],paper["url"],now.isoformat(),
-                                  source_digest,c,APPROVED_TEMPLATE if c == "ELIGIBLE_TITLE_CUE_ONLY" else None))
+                                  source_digest,c,APPROVED_TEMPLATE if c == source_fit.AUTO else None))
                 new_count += cur.rowcount
-                eligible_count += cur.rowcount if c == "ELIGIBLE_TITLE_CUE_ONLY" else 0
+                eligible_count += cur.rowcount if c == source_fit.AUTO else 0
             log(db, now, "EXTERNAL_EVIDENCE_SCREENED", {"received": len(papers), "new": new_count,
                                                         "eligible_title_cues": eligible_count,
                                                         "response_sha256": source_digest})
@@ -321,7 +344,7 @@ def cycle(root: Path, policy_path: Path, *, now: datetime | None = None,
                 # Crossref sends results in relevance order. Use the first eligible
                 # title cue; no search through study outcomes or alternative days.
                 first = next((paper["doi"] for paper in papers
-                              if classify(paper["title"]) == "ELIGIBLE_TITLE_CUE_ONLY"), None)
+                              if classify(paper["title"], paper.get("abstract")) == source_fit.AUTO), None)
                 if first:
                     db.execute("INSERT INTO studies(template_id,doi,status,created_at) VALUES(?,?,?,?)",
                                (APPROVED_TEMPLATE,first,"WAITING_DATA",now.isoformat()))
@@ -356,11 +379,18 @@ def main(argv: list[str] | None = None) -> int:
     c = cmds.add_parser("cycle", help="At most one bounded Crossref metadata query and one frozen study")
     c.add_argument("--policy", type=Path, required=True)
     cmds.add_parser("status", help="Inspect durable evidence and study outcomes")
+    cmds.add_parser("relevance-audit", help="Offline source fit audit of existing Crossref records; no studies or HTTP")
     args = parser.parse_args(argv)
     try:
-        output = cycle(args.home, args.policy) if args.command == "cycle" else status(args.home)
+        if args.command == "cycle":
+            output = cycle(args.home, args.policy)
+        elif args.command == "relevance-audit":
+            from .source_fit_audit import audit_existing
+            output = audit_existing(args.home)
+        else:
+            output = status(args.home)
         print(json.dumps(output, ensure_ascii=False, sort_keys=True, indent=2))
-        if args.command == "status":
+        if args.command in ("status", "relevance-audit"):
             return 0
         return 1 if output["status"].startswith(("FAILED_", "STOP_", "INTERRUPTED_")) else 0
     except (OSError, ValueError, sqlite3.Error, RuntimeError) as exc:

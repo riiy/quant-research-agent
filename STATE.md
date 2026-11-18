@@ -19,7 +19,7 @@ Last updated: 2026-11-18
 
 ## Current phase
 
-`AUTONOMOUS_RESEARCH_LOOP_V1_IMPLEMENTED_PR_REVIEW_PENDING` — P1 development branch only, **not deployed or validated with live Crossref**. P0 manual service test and timer activation were user-reported on 2026-11-17; its seven-day acceptance is still pending.
+`P1_FIRST_REAL_CYCLE_COMPLETED_SOURCE_FIT_REVIEW_REQUIRED` — PR #8 merged; a user-run real Crossref-to-frozen-test-to-archive cycle completed on 2026-11-18. The specific statistical hypothesis failed all four predeclared gates. **However the selected DOI predicts Monday STOCK returns using weekend CRYPTO returns, whereas the frozen test predicts Monday BTC returns: source-to-test relevance failed.** P1 engineering path was demonstrated; P1 scientific relevance acceptance is not met. P0 manual service test and timer activation were user-reported on 2026-11-17; its seven-day unattended acceptance is still pending.
 
 Prior completed milestone: `MVP_CORE_LOOP_ACCEPTED_RESEARCH_ONLY`.
 
@@ -352,7 +352,7 @@ trading_allowed: false
 
 ```yaml
 long_term_goal: 7x24_AUTONOMOUS_RESEARCH_DISCOVER_FALSIFY_ARCHIVE_ITERATE
-current_phase: AUTONOMOUS_RESEARCH_LOOP_V1_IMPLEMENTED_PR_REVIEW_PENDING
+current_phase: P1_FIRST_REAL_CYCLE_COMPLETED_SOURCE_FIT_REVIEW_REQUIRED
 completed_milestone: MVP_CORE_LOOP_ACCEPTED
 active_strategy_research: null
 new_unreviewed_mechanism_execution_allowed: false
@@ -379,9 +379,9 @@ The prior study-by-study approach built useful reproducible tests but not the in
 ## AUTONOMOUS_RESEARCH_LOOP_v1 — bounded evidence-to-falsification P1 (2026-11-18)
 
 ```yaml
-p1_status: IMPLEMENTED_OFFLINE_TESTED_PR_REVIEW_PENDING
-p1_live_external_source_checked: false
-p1_real_spot_mechanism_result: NOT_RUN
+p1_status: FIRST_REAL_CYCLE_USER_REPORTED_SOURCE_FIT_FAILED
+p1_live_external_source_checked: true # user-reported Crossref fetch; raw response not independently inspected
+p1_real_spot_mechanism_result: STOP_INSUFFICIENT_INCREMENTAL_INFORMATION # user-reported; full JSON unavailable
 p1_timer_enabled: false
 p0_seven_day_unattended_acceptance: IN_PROGRESS_NOT_PASSED
 trading_allowed: false
@@ -398,3 +398,37 @@ sealed_2024_2025_holdout_evaluated: false
 **Evidence state:** 19 authoring-side offline mocked-source/synthetic unit tests passed. GitHub CI and any *real* Crossref/pinned BTC evaluation are **not yet** validated here. The proposed P1 service/timer are disabled examples. P0's live timer and existing SQLite runtime remain untouched.
 
 **P1 acceptance:** user-reviewed PR; first live Crossref metadata provenance and at most one real pinned spot test (if a title-eligible new DOI is found) producing an immutable report without manual bridging. No title candidate means discovery-only progress and does NOT count as autonomous falsification. No source access => safe stop. If a first real report passes review, stop P1 implementation rather than expand to yet more one-off tests. Open-ended AI mechanism invention remains an unsolved P2 capability.
+
+## P1 first real autonomous cycle — source-fit audit (2026-11-18)
+
+```yaml
+research_id: BTC_WEEKDAY_INFORMATION_v1
+run_origin: USER_RUN_LOCAL_P1_CYCLE
+source_doi: 10.1016/j.frl.2025.108661
+source_title: "A crypto-stock weekend effect: Predicting Monday stock returns using weekend cryptocurrency returns"
+source_paper_target: MONDAY_STOCK_MARKET_RETURNS
+frozen_test_target: MONDAY_BTC_SPOT_RETURNS
+source_to_hypothesis_fit: FAILED
+research_status: STOP_INSUFFICIENT_INCREMENTAL_INFORMATION
+four_preregistered_gates_passed: 0
+four_preregistered_gates_total: 4
+report_relative_path: runtime/agent/reports/BTC_WEEKDAY_INFORMATION_v1.json
+report_sha256_user_reported: d7c5963aa73340c1c8f9d8901c511d74ce0dbd9a8dca33ae04657f59d4d0fe99
+raw_source_response_independently_inspected: false
+full_report_independently_inspected: false
+real_spot_recomputed_here: false
+p1_automated_execution_path: USER_REPORTED_COMPLETED
+p1_scientific_source_relevance_gate: FAILED
+p1_unattended_scheduler_enabled: false
+p0_seven_day_unattended_acceptance: IN_PROGRESS_NOT_PASSED
+trading_allowed: false
+holdout_evaluated: false
+```
+
+**Facts from user-run CLI:** `quant-research-loop cycle` selected DOI above and automatically wrote an immutable, SHA256-pinned retrospective report. The user-shared CLI summary reported **false for each of the four previously frozen gates**: >=2% relative MSE improvement, positive one-sided paired 14-day block-bootstrap lower bound, 2022/2023 annual sign consistency and beating the zero-return predictor. The full numeric metrics, original Crossref response bytes and historical spot file were not uploaded for independent replication. The user-provided SHA256 is recorded as reported, not independently verified.
+
+**Independent source check:** RePEc/Elsevier bibliographic record for DOI [10.1016/j.frl.2025.108661](https://ideas.repec.org/a/eee/finlet/v86y2025ipes1544612325019154.html) describes **weekend cryptocurrency returns as predictors of Monday equity/stock returns**. The P1 preapproved experiment uses the calendar Monday indicator to predict **BTC's own** returns. Title-cue `classify()` screening accepted a different dependent variable. This is a material source-to-research-scope mismatch; the automated result is **not a falsification of the discovered paper's hypothesis**. The independent, already frozen BTC-Monday incremental-prediction test itself remains a user-reported failure; do not replace the DOI, alter Monday, test another weekday, rerun with a different source, or inspect 2024/2025 to rescue it.
+
+**Decision:** P1's engineering path (external metadata → DOI classification → frozen execution → immutable archive) was demonstrated in one user-initiated real run. **Do not mark the scientific relevance gate or end-to-end autonomous scientific research accepted.** Keep the original archived report bytes and all original logs intact. P1 timer is not reported as enabled; P0 unattended 7-day acceptance remains separate. No new strategy experiments or P1 feature expansion to retune the failed result.
+
+**Next highest-value improvement (separately reviewed future P2):** enforce source *dependent variable, direction and target-market* alignment (ideally abstract-level evidence scope verification) before executing an approved hypothesis template. Add counterexamples such as crypto-weekend → Monday-stock to relevance-gate tests. Avoid claiming this is a model-based or fully general autonomous scientist. STOP further P1 mechanism experiments pending that relevance gate and independent artifact review.

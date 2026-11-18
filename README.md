@@ -4,6 +4,21 @@ A **research-only** experiment loop: source-grounded hypothesis discovery → pr
 
 **No broker/exchange trading APIs, keys, order generation, live trading or account-simulation permissions.** Neither a profitable backtest nor a passed holdout grants trading permission.
 
+## P1: autonomous evidence-to-falsification prototype — not yet deployed
+
+The approved end goal is a 7×24 unattended research agent, not a timer that repeatedly reports IDLE. The new `quant-research-loop` is a **separate, opt-in, bounded P1 prototype**. It acquires new-to-local-registry DOI/title metadata from one fixed Crossref endpoint, fingerprints and archives the response, screens one previously unstudied calendar mechanism, and **only if a qualified title and pinned 2020–2023 spot data exist**, executes one fixed statistical Kill Test and archives its result. It cannot read sealed 2024/2025 values, trade, call paid AI models, execute arbitrary code or tune failed models. Crossref titles are screening cues, not verified alpha findings. The existing P0 service and SQLite are unaffected.
+
+[Full frozen protocol, evidence limitations, acceptance and operator runbook](docs/AUTONOMOUS_RESEARCH_LOOP_V1.md). Review before running a live `cycle` (which makes a real metadata request and may execute the one approved test):
+
+```bash
+pip install -e .
+cp deploy/quant-research-loop.policy.example.json runtime/research-loop.policy.json
+quant-research-loop --home runtime status
+quant-research-loop --home runtime cycle --policy runtime/research-loop.policy.json
+```
+
+P1 service/timer examples are **not enabled automatically**. CI passing is not proof of a successful live autonomous study. The prototype is a narrow deterministic source-to-experiment template, not yet general autonomous scientific discovery.
+
 ## Long-term objective: bounded autonomy v0
 
 **North Star:** 7×24 unattended, evidence-driven AI Quant Research Agent. Humans authorize research scope, budgets and safety constraints; the agent discovers, falsifies, archives and loops within them.

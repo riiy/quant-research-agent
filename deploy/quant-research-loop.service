@@ -1,0 +1,17 @@
+[Unit]
+Description=Bounded research-only external evidence discovery and one-shot falsification
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=riiy
+WorkingDirectory=/home/riiy/quant-research-agent
+Environment=QUANT_HOME=/home/riiy/quant-research-agent/runtime
+ExecStart=/home/riiy/quant-research-agent/.venv/bin/quant-research-loop --home /home/riiy/quant-research-agent/runtime cycle --policy /etc/quant-research-loop.policy.json
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=false
+PrivateTmp=true
+ReadWritePaths=/home/riiy/quant-research-agent/runtime
+TimeoutStartSec=120

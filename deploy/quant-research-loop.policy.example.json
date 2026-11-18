@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "research_only": true,
+  "trading_allowed": false,
+  "account_simulation_allowed": false,
+  "ticket_generation_allowed": false,
+  "holdout_access_allowed": false,
+  "model_calls_allowed": false,
+  "arbitrary_code_allowed": false,
+  "strategy_backtest_allowed": false,
+  "source": "crossref",
+  "search_query": "bitcoin cryptocurrency calendar day of week weekend returns",
+  "max_results": 20,
+  "poll_interval_hours": 24,
+  "max_requests_per_utc_day": 1,
+  "template": "BTC_WEEKDAY_INFORMATION_v1",
+  "spot_path": "data/BTCUSDT-1d.csv"
+}

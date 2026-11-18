@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily bounded external evidence research poll (manual enable only)
+
+[Timer]
+OnCalendar=*-*-* 02:00:00 UTC
+Persistent=true
+RandomizedDelaySec=600
+Unit=quant-research-loop.service
+
+[Install]
+WantedBy=timers.target

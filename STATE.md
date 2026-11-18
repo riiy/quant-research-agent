@@ -1,6 +1,6 @@
 # Quant Research Agent — Project State
 
-Last updated: 2026-11-17
+Last updated: 2026-11-18
 
 ## Objective
 
@@ -19,7 +19,7 @@ Last updated: 2026-11-17
 
 ## Current phase
 
-`AGENT_AUTONOMY_MVP_IMPLEMENTED_PR_REVIEW_PENDING` — **not deployed, not operationally accepted**.
+`AUTONOMOUS_RESEARCH_LOOP_V1_IMPLEMENTED_PR_REVIEW_PENDING` — P1 development branch only, **not deployed or validated with live Crossref**. P0 manual service test and timer activation were user-reported on 2026-11-17; its seven-day acceptance is still pending.
 
 Prior completed milestone: `MVP_CORE_LOOP_ACCEPTED_RESEARCH_ONLY`.
 
@@ -352,7 +352,7 @@ trading_allowed: false
 
 ```yaml
 long_term_goal: 7x24_AUTONOMOUS_RESEARCH_DISCOVER_FALSIFY_ARCHIVE_ITERATE
-current_phase: AGENT_AUTONOMY_MVP_IMPLEMENTED_PR_REVIEW_PENDING
+current_phase: AUTONOMOUS_RESEARCH_LOOP_V1_IMPLEMENTED_PR_REVIEW_PENDING
 completed_milestone: MVP_CORE_LOOP_ACCEPTED
 active_strategy_research: null
 new_unreviewed_mechanism_execution_allowed: false
@@ -362,8 +362,8 @@ ticket_generation_allowed: false
 sealed_holdout_access_allowed: false
 autonomous_external_browsing_allowed: false
 autonomous_code_generation_execution_allowed: false
-agent_systemd_timer_enabled: false
-seven_day_unattended_acceptance: NOT_STARTED
+agent_systemd_timer_enabled: true # user-reported; systemd journal not independently reviewed
+seven_day_unattended_acceptance: IN_PROGRESS_NOT_PASSED
 ```
 
 The prior study-by-study approach built useful reproducible tests but not the intended closed-loop autonomous agent. Next priority: control-plane lifecycle, not a fifth BTC mechanism.
@@ -375,3 +375,26 @@ The prior study-by-study approach built useful reproducible tests but not the in
 **No rescue:** trend, volatility exposure, funding pressure and attention demand remain archived and cannot be revived by changing the v0 policy. An empty queue is a correct stop condition, not a request to generate redundant research.
 
 **Acceptance:** Seven *real* consecutive UTC dates of service heartbeats, at least one completed preapproved task, no failed tasks or policy drift, no duplicate work or paid API calls, and independent OS journal verification of unattended scheduling. Simulated-time tests are not proof of a deployed 7×24 agent. Only then record `SEVEN_DAY_UNATTENDED_CONTROLLER_ACCEPTED`. Further P1 evidence discovery / generic bounded test execution requires new human review. Stop further P0 infrastructure work once accepted.
+
+## AUTONOMOUS_RESEARCH_LOOP_v1 — bounded evidence-to-falsification P1 (2026-11-18)
+
+```yaml
+p1_status: IMPLEMENTED_OFFLINE_TESTED_PR_REVIEW_PENDING
+p1_live_external_source_checked: false
+p1_real_spot_mechanism_result: NOT_RUN
+p1_timer_enabled: false
+p0_seven_day_unattended_acceptance: IN_PROGRESS_NOT_PASSED
+trading_allowed: false
+account_simulation_allowed: false
+sealed_2024_2025_holdout_evaluated: false
+```
+
+**Purpose:** Move beyond P0's hourly `IDLE_NO_APPROVED_TASKS` to a real bounded **new evidence → frozen hypothesis → automated falsification → cumulative archive** cycle. Stop spending the primary development budget on P0 infrastructure or bespoke manually operated new trading models.
+
+**Design and source audit:** `docs/AUTONOMOUS_RESEARCH_LOOP_V1.md`. A separate `quant-research-loop` process (not altering the deployed P0 service) may, if explicitly activated by the operator, request new-to-local-archive **Crossref DOI/title/publication metadata** from one fixed HTTPS endpoint/query at most once per UTC day. It stores the untouched response bytes + hash, screens a deterministic calendar-return title cue, saves all eligible/irrelevant DOIs and selects only the FIRST eligible paper as a hypothesis lead. A title is NOT empirical proof; published evidence might overlap historical sample dates; no LLM, self-executed code, arbitrary network URLs or trading.
+
+**One preapproved independent mechanism test:** `BTC_WEEKDAY_INFORMATION_v1` checks if a known Monday calendar indicator improves BTC future daily log-return prediction beyond returns, volatility and volume, with fixed ridge lambda 10, 2020–2021 calibration / 2022–2023 evaluation, pinned previously used BTC 2020–2023 spot prefix SHA256 `fa5113d1b946ed19ab0eb48d32e05317ef944a6ba12bee79680ba7a247237def`. Inputs break before 2024. Four preregistered AND gates: >=2% OOS relative MSE gain, positive paired block bootstrap 14-day/1000 one-sided 95% lower gain, positive in both years, beats zero-return baseline. Failure STOP/ARCHIVE; passage RETROSPECTIVE_MECHANISM_ONLY/NEEDS_HUMAN_REVIEW; never a trading validation. Only ONE study globally per P1 lifecycle, no new paper/day/model reruns to rescue.
+
+**Evidence state:** 19 authoring-side offline mocked-source/synthetic unit tests passed. GitHub CI and any *real* Crossref/pinned BTC evaluation are **not yet** validated here. The proposed P1 service/timer are disabled examples. P0's live timer and existing SQLite runtime remain untouched.
+
+**P1 acceptance:** user-reviewed PR; first live Crossref metadata provenance and at most one real pinned spot test (if a title-eligible new DOI is found) producing an immutable report without manual bridging. No title candidate means discovery-only progress and does NOT count as autonomous falsification. No source access => safe stop. If a first real report passes review, stop P1 implementation rather than expand to yet more one-off tests. Open-ended AI mechanism invention remains an unsolved P2 capability.

@@ -19,7 +19,7 @@ Last updated: 2026-11-18
 
 ## Current phase
 
-`P1_FIRST_REAL_CYCLE_COMPLETED_SOURCE_FIT_REVIEW_REQUIRED` — PR #8 merged; a user-run real Crossref-to-frozen-test-to-archive cycle completed on 2026-11-18. The specific statistical hypothesis failed all four predeclared gates. **However the selected DOI predicts Monday STOCK returns using weekend CRYPTO returns, whereas the frozen test predicts Monday BTC returns: source-to-test relevance failed.** P1 engineering path was demonstrated; P1 scientific relevance acceptance is not met. P0 manual service test and timer activation were user-reported on 2026-11-17; its seven-day unattended acceptance is still pending.
+`SOURCE_TO_HYPOTHESIS_RELEVANCE_GATE_V1_PR_REVIEW_PENDING` — PR #8 merged; a user-run real Crossref-to-frozen-test-to-archive cycle completed on 2026-11-18. The specific statistical hypothesis failed all four predeclared gates. **However the selected DOI predicts Monday STOCK returns using weekend CRYPTO returns, whereas the frozen test predicts Monday BTC returns: source-to-test relevance failed.** P1 engineering path was demonstrated; P1 scientific relevance acceptance is not met. P0 manual service test and timer activation were user-reported on 2026-11-17; its seven-day unattended acceptance is still pending.
 
 Prior completed milestone: `MVP_CORE_LOOP_ACCEPTED_RESEARCH_ONLY`.
 
@@ -432,3 +432,28 @@ holdout_evaluated: false
 **Decision:** P1's engineering path (external metadata → DOI classification → frozen execution → immutable archive) was demonstrated in one user-initiated real run. **Do not mark the scientific relevance gate or end-to-end autonomous scientific research accepted.** Keep the original archived report bytes and all original logs intact. P1 timer is not reported as enabled; P0 unattended 7-day acceptance remains separate. No new strategy experiments or P1 feature expansion to retune the failed result.
 
 **Next highest-value improvement (separately reviewed future P2):** enforce source *dependent variable, direction and target-market* alignment (ideally abstract-level evidence scope verification) before executing an approved hypothesis template. Add counterexamples such as crypto-weekend → Monday-stock to relevance-gate tests. Avoid claiming this is a model-based or fully general autonomous scientist. STOP further P1 mechanism experiments pending that relevance gate and independent artifact review.
+
+## SOURCE_TO_HYPOTHESIS_RELEVANCE_GATE_v1 — implementation proposed (2026-11-18)
+
+```yaml
+current_phase: SOURCE_TO_HYPOTHESIS_RELEVANCE_GATE_V1_PR_REVIEW_PENDING
+source_fit_gate: IMPLEMENTED_OFFLINE_TESTED_AWAITING_CI_AND_REVIEW
+legacy_2026_11_18_doi: 10.1016/j.frl.2025.108661
+legacy_source_fit_decision: REJECT_TARGET_MISMATCH
+original_monday_study_status: STOP_INSUFFICIENT_INCREMENTAL_INFORMATION
+original_monday_report_sha256_user_verified: d7c5963aa73340c1c8f9d8901c511d74ce0dbd9a8dca33ae04657f59d4d0fe99
+historical_15_paper_real_batch_audit: NOT_YET_RUN
+new_experiment_authorized: false
+p1_unattended_timer_enabled: false
+p0_seven_day_unattended_acceptance: IN_PROGRESS_NOT_PASSED
+trading_allowed: false
+holdout_evaluated: false
+```
+
+The first live P1 study exposed a **scientific source-target mismatch**: predicting Monday stock returns *from weekend cryptocurrency returns* is not the same question as predicting Bitcoin's own Monday returns from a Monday dummy. The original frozen P1 hypothesis failed all its gates; no rescue, no replacement DOI/weekday, no new trading analysis.
+
+**Proposed repair:** `docs/SOURCE_FIT_GATE_V1.md` introduces deterministic, deliberately conservative target-market/predicted-variable/predictor/time-scope assessment before any **future** experimental claim. An explicit stock-return dependent variable, BTC derivatives instead of spot, or noncalendar predictor is rejected. Missing or ambiguous abstract => `NEEDS_HUMAN_SOURCE_REVIEW`, never automatic execution. A match means *metadata suggests a suitable research question*, not paper findings or investment alpha. Crossref supplies optional abstracts from the same approved endpoint; no new domains, model calls or code generation.
+
+**Original evidence preserved:** `quant-research-loop --home runtime relevance-audit` reads the existing SQLite/P1 Crossref raw responses **offline**, verifies original SHA256 and DOI fields, and creates an immutable, content-addressed separate relevance audit. It **does not modify** the old 15 paper decisions, original Monday report, strategy results or P0 runtime. The real 15-paper audit has not run in this development environment. A synthetic 15-paper mock is **not** proof of real-batch relevance.
+
+**Stopping condition:** The first P1 template is spent. The modified controller safely returns `IDLE_TEMPLATE_SATURATED` after a terminal decision, making zero more Crossref requests for that already-studied template. After PR approval, run one offline real-batch audit; verify report SHA remains pinned and known DOI fails source fit. Stop work on this gate if correct. A new economic mechanism would require a new, separately frozen protocol. P0 service/timer unchanged.

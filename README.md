@@ -4,6 +4,19 @@ A **research-only** experiment loop: source-grounded hypothesis discovery → pr
 
 **No broker/exchange trading APIs, keys, order generation, live trading or account-simulation permissions.** Neither a profitable backtest nor a passed holdout grants trading permission.
 
+## Source-to-hypothesis relevance gate — PR pending
+
+The first P1 cycle exposed an **actual scientific mismatch**: the selected DOI predicts Monday **stock** returns from weekend **cryptocurrency** returns, but our experiment predicts **BTC's own** Monday returns from a known weekday dummy. Its archived statistical STOP remains valid for the frozen BTC-Monday question, not as a falsification of the discovered stock-market paper.
+
+The proposed [source-fit gate](docs/SOURCE_FIT_GATE_V1.md) now checks outcome, market, predictor, time scope and available title/abstract evidence **before** an eligible study can execute; unknown metadata becomes `NEEDS_HUMAN_SOURCE_REVIEW`. It never retunes the one previously failed hypothesis. For the local 15-record batch:
+
+```bash
+# Offline: reads original response bytes and SHA256, no Crossref call or experiment
+quant-research-loop --home runtime relevance-audit
+```
+
+The historical report and existing SQLite are preserved; the new audit is a separate immutable artifact. Since P1 has one spent template, further `cycle` runs return `IDLE_TEMPLATE_SATURATED` without using the network. The original P0 timer continues unchanged; do not enable P1 timer for a saturated experiment.
+
 ## P1: autonomous evidence-to-falsification prototype — not yet deployed
 
 The approved end goal is a 7×24 unattended research agent, not a timer that repeatedly reports IDLE. The new `quant-research-loop` is a **separate, opt-in, bounded P1 prototype**. It acquires new-to-local-registry DOI/title metadata from one fixed Crossref endpoint, fingerprints and archives the response, screens one previously unstudied calendar mechanism, and **only if a qualified title and pinned 2020–2023 spot data exist**, executes one fixed statistical Kill Test and archives its result. It cannot read sealed 2024/2025 values, trade, call paid AI models, execute arbitrary code or tune failed models. Crossref titles are screening cues, not verified alpha findings. The existing P0 service and SQLite are unaffected.

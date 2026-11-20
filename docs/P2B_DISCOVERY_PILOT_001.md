@@ -92,3 +92,25 @@ The gateway model must return a Responses JSON body with status=completed, model
 The owner-provided shell config (if in a .env file rather than exported environment) must be loaded using their normal local secrets process; do not commit or paste keys. Regenerate the owner-approval JSON template **after** final PR review and code checkout because the model_code_sha256 changes when this runner changes. Any old template hash is invalid.
 
 Status: gateway adapter is proposed for code review only, MODEL_GATEWAY_PRICING_NOT_VERIFIED, MODEL_ID_SPECIFIC_APPROVAL_PENDING, REAL_P2B_NOT_RUN.
+
+## Owner model and tariff confirmation (2026-11-20, later than prior UNVERIFIED status)
+
+The owner clarified the **exact** private-gateway Responses model alias is `chatgpt/gpt6.2-sol` (no hyphen between `gpt` and `6.2`), and stated its input/output charging follows OpenAI's GPT-6.2 Sol Standard prices. Independently checked public reference: https://developers.openai.com/api/docs/models/gpt-6.2-sol (US$2 input, US$10 output per million text tokens). This confirmation supersedes the earlier *model alias unknown* and *gateway fee unknown* assumptions for **owner-attested configuration**, but does not prove the gateway's actual model routing, Structured Outputs behavior, returned model identifier or invoice.
+
+For the **owner's local-only** approval template, pin:
+
+| Field | Operator-confirmed value |
+| --- | --- |
+| model_provider | openai_compatible_gateway |
+| model_id | chatgpt/gpt6.2-sol |
+| model_api_key_env | LLM_API_KEY |
+| input_price_usd_per_m | 2.0 |
+| output_price_usd_per_m | 10.0 |
+| pricing_reference | owner-attested gateway parity with OpenAI GPT-6.2 Sol Standard pricing on 2026-11-20; https://developers.openai.com/api/docs/models/gpt-6.2-sol |
+| max_model_calls / max_spend_usd | 1 / 10 |
+
+Keep `endpoint` and `model_user_agent` exactly as printed by the local `approval-template`; do not add private URLs or keys to Git history. After PR #14 review and merge, regenerate the template on the exact installed code version. The earlier `model_code_sha256` is not reusable after code changes.
+
+The supplied model ID and price are **configuration confirmation**, not an instruction to send a gateway request now. An explicit locally archived approval instance (approved=true, reviewed SHA256, approval ref, current UTC approval/pricing timestamps) is still mandatory; the user's PR review/merge gate remains in force. At-most-one request is not a permission to probe gateway compatibility with an extra smoke test. On model ID rewrite or incompatible JSON schema, stop and archive instead of retrying.
+
+Status: `MODEL_ALIAS_AND_OWNER_ATTESTED_TARIFF_CONFIRMED`; `GATEWAY_RUNTIME_BEHAVIOR_UNVERIFIED`; `IMPLEMENTATION_PR_REVIEW_PENDING`; `REAL_P2B_NOT_RUN`.

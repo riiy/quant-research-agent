@@ -555,3 +555,11 @@ Next decision: review and freeze the pilot preregistration, then request **disti
 - PR #14 now proposes a minimal exact-endpoint/model-alias gateway adapter; the code refuses any external request until the chosen gateway/model is frozen in a new approval document.
 - Gateway actual billing rates and exact routed model are **UNVERIFIED**, despite public OpenAI prices. Custom gateway templates intentionally contain zero rates/placeholder billing evidence and are not runnable until independently completed and approved.
 - No gateway/model/network calls have been made. P2-B scientific status remains `NOT_RUN`.
+
+## 2026-11-20 P2-B owner-confirmed gateway alias/pricing
+
+- Latest user-confirmed exact model alias: `chatgpt/gpt6.2-sol`, routed via existing LLM-prefixed HTTPS Responses gateway. Do **not** substitute `chatgpt/gpt-6.1-sol` or `gpt-6.2-sol` into the local gateway model variable.
+- Owner attests gateway pricing matches official GPT-6.2 Sol Standard token charges: US$2/million input and US$10/million output; independent public reference https://developers.openai.com/api/docs/models/gpt-6.2-sol. Charge parity is attested, while actual proxy routing/response model ID/billing remains untested.
+- PR #14 fixture tests now pin exact alias; gateway adapter in runner source is already driven by `LLM_MODEL` and `BASE_URL`, so no further hardcoded model/endpoint wiring is necessary.
+- Budget and scientific scope unchanged: up to 7 external DOI evidence requests, max 1 approved model call, total cap US$10, no retry/study code/backtest/trading/simulation/tickets/holdout.
+- Owner retains separate review/merge of PR #14 and local one-shot approval-document requirement; no real outbound run performed. `P2B_REAL_DISCOVERY_NOT_RUN`.

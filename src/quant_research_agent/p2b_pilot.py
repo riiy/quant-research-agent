@@ -30,6 +30,40 @@ MAX_SOURCE_CALLS = 7
 MAX_COST_USD = 10
 INPUT_PRICE = 2.0             # USD per million tokens, Standard
 OUTPUT_PRICE = 10.0           # USD per million tokens, Standard
+OFFICIAL_PRICE_REFERENCE = "https://developers.openai.com/api/docs/models/gpt-6.2-sol"
+GATEWAY_PRICE_PLACEHOLDER = "REPLACE_WITH_GATEWAY_BILLING_PROOF_REFERENCE"
+
+
+def model_config() -> dict:
+    """Resolve a single exact Responses endpoint; never silently mix key/model families.
+
+    A custom route is supplied only by the operator's local environment and must
+    additionally match the sealed owner approval. No gateway URL is embedded in Git.
+    """
+    names = ("BASE_URL", "LLM_MODEL", "LLM_API_KEY", "LLM_API_STYLE", "LLM_USER_AGENT")
+    custom = any(os.getenv(name) for name in names)
+    if not custom:
+        return {"provider": "openai", "model": MODEL, "endpoint": ENDPOINT,
+                "api_key_env": "OPENAI_API_KEY", "user_agent": "quant-research-agent-p2b/0.1",
+                "price_input": INPUT_PRICE, "price_output": OUTPUT_PRICE,
+                "pricing_reference": OFFICIAL_PRICE_REFERENCE, "custom": False}
+    base = os.getenv("BASE_URL", "").rstrip("/")
+    model = os.getenv("LLM_MODEL", "")
+    style = os.getenv("LLM_API_STYLE", "")
+    target = parse.urlsplit(base)
+    if (style != "responses" or target.scheme != "https" or not target.hostname or
+            target.path != "/v1" or target.query or target.fragment or
+            target.username or target.password or
+            not re.fullmatch(r"[A-Za-z0-9._/-]{4,120}", model)):
+        raise ValueError("Gateway requires HTTPS BASE_URL ending /v1, LLM_MODEL and LLM_API_STYLE=responses")
+    agent = os.getenv("LLM_USER_AGENT", "quant-research-agent-p2b/0.1")
+    if not 1 <= len(agent) <= 128 or any(ord(ch) < 32 or ord(ch) > 126 for ch in agent):
+        raise ValueError("Unsafe model gateway User-Agent")
+    return {"provider": "openai_compatible_gateway", "model": model,
+            "endpoint": base + "/responses", "api_key_env": "LLM_API_KEY",
+            "user_agent": agent, "price_input": 0.0, "price_output": 0.0,
+            "pricing_reference": GATEWAY_PRICE_PLACEHOLDER, "custom": True}
+
 SEARCH_URL = ("https://api.crossref.org/works?" +
               parse.urlencode({"query.bibliographic": "cryptocurrency markets",
                                "filter": "type:journal-article,from-pub-date:2024-01-01,until-pub-date:2026-11-20",
@@ -113,17 +147,20 @@ def response_schema() -> dict:
 
 
 def approval_template() -> dict:
+    cfg = model_config()
     return {
         "experiment_id": ID, "approved": False,
         "approval_reference": "REPLACE_WITH_SEPARATE_OWNER_APPROVAL_REFERENCE",
         "approved_at_utc": "REPLACE_WITH_UTC_ISO_TIMESTAMP",
-        "model_provider": "openai", "model_id": MODEL, "endpoint": ENDPOINT,
+        "model_provider": cfg["provider"], "model_id": cfg["model"], "endpoint": cfg["endpoint"],
+        "model_api_key_env": cfg["api_key_env"], "model_user_agent": cfg["user_agent"],
         "model_code_sha256": sha(Path(__file__).read_bytes()),
         "instructions_sha256": sha(INSTRUCTIONS.encode()),
         "source_search_url": SEARCH_URL, "max_source_requests": MAX_SOURCE_CALLS,
         "max_model_calls": 1, "max_spend_usd": MAX_COST_USD,
         "max_input_bytes": MAX_INPUT_BYTES, "max_output_tokens": MAX_OUTPUT_TOKENS,
-        "input_price_usd_per_m": INPUT_PRICE, "output_price_usd_per_m": OUTPUT_PRICE,
+        "input_price_usd_per_m": cfg["price_input"], "output_price_usd_per_m": cfg["price_output"],
+        "pricing_reference": cfg["pricing_reference"],
         "pricing_verified_at_utc": "REPLACE_WITH_UTC_ISO_TIMESTAMP",
         "trading_allowed": False, "account_simulation_allowed": False,
         "ticket_generation_allowed": False, "sealed_holdout_access_allowed": False,
@@ -139,10 +176,19 @@ def check_approval(path: Path, now: datetime) -> dict:
     if type(a) is not dict or set(a) != set(expect):
         raise ValueError("Approval document has unexpected fields")
     for k, v in expect.items():
-        if k in ("approved", "approval_reference", "approved_at_utc", "pricing_verified_at_utc"):
+        if k in ("approved", "approval_reference", "approved_at_utc", "pricing_verified_at_utc") or (
+                expect["model_provider"] == "openai_compatible_gateway" and
+                k in ("input_price_usd_per_m", "output_price_usd_per_m", "pricing_reference")):
             continue
         if a[k] != v or type(a[k]) is not type(v):
             raise ValueError("Approval policy drift: " + k)
+    if expect["model_provider"] == "openai_compatible_gateway":
+        for k in ("input_price_usd_per_m", "output_price_usd_per_m"):
+            if type(a[k]) not in (int, float) or not 0 < a[k] <= 100:
+                raise ValueError("Gateway billing rates must be explicitly verified and pinned")
+        ref = a["pricing_reference"]
+        if not isinstance(ref, str) or not 12 <= len(ref) <= 500 or ref == GATEWAY_PRICE_PLACEHOLDER:
+            raise ValueError("Missing independent gateway billing price evidence reference")
     if a["approved"] is not True or not isinstance(a["approval_reference"], str) or len(a["approval_reference"]) < 16:
         raise ValueError("Experiment-specific signed-off owner approval is required")
     for field in ("approved_at_utc", "pricing_verified_at_utc"):
@@ -247,17 +293,18 @@ def _record_network(log: Path, what: str, url: str, cap: int) -> None:
         os.fsync(f.fileno())
 
 
-def _model_get(payload: bytes) -> bytes:
-    key = os.getenv("OPENAI_API_KEY")
+def _model_get(payload: bytes, cfg: dict) -> bytes:
+    key = os.getenv(cfg["api_key_env"])
     if not key:
-        raise ValueError("OPENAI_API_KEY unavailable")
-    req = request.Request(ENDPOINT, method="POST", data=payload, headers={
-        "Authorization": "Bearer " + key, "Content-Type": "application/json"})
+        raise ValueError("Approved model API key unavailable")
+    req = request.Request(cfg["endpoint"], method="POST", data=payload, headers={
+        "Authorization": "Bearer " + key, "Content-Type": "application/json",
+        "User-Agent": cfg["user_agent"]})
     class NoRedirect(request.HTTPRedirectHandler):
         def redirect_request(self, req, fp, code, msg, headers, newurl):
             raise ValueError("Model API redirect forbidden")
     with request.build_opener(NoRedirect).open(req, timeout=90) as res:
-        if res.status != 200 or res.geturl() != ENDPOINT:
+        if res.status != 200 or res.geturl() != cfg["endpoint"]:
             raise ValueError("Unapproved model endpoint/status")
         raw = res.read(1_000_001)
     if len(raw) > 1_000_000:
@@ -265,10 +312,11 @@ def _model_get(payload: bytes) -> bytes:
     return raw
 
 
-def prepare_request(sources: list[dict]) -> bytes:
+def prepare_request(sources: list[dict], cfg: dict | None = None) -> bytes:
+    cfg = cfg or model_config()
     user_payload = {"experiment_id": ID, "evidence": sources}
     req = {
-        "model": MODEL, "service_tier": "default", "store": False,
+        "model": cfg["model"], "store": False,
         "instructions": INSTRUCTIONS,
         "input": [{"role": "user", "content": [
             {"type": "input_text", "text": json.dumps(user_payload, ensure_ascii=False)}
@@ -278,15 +326,20 @@ def prepare_request(sources: list[dict]) -> bytes:
         "text": {"format": {"type": "json_schema", "name": "p2b_discovery",
                             "strict": True, "schema": response_schema()}},
     }
+    if not cfg["custom"]:
+        req["service_tier"] = "default"
     body = encoded(req)
     if len(body) > MAX_INPUT_BYTES:
         raise ValueError("Model request exceeds hard UTF-8 byte budget; no model call allowed")
     return body
 
 
-def parse_response(raw: bytes) -> tuple[dict, dict]:
+def parse_response(raw: bytes, cfg: dict | None = None) -> tuple[dict, dict]:
+    cfg = cfg or model_config()
     obj = json.loads(raw)
-    if obj.get("status") != "completed" or obj.get("model") != MODEL or obj.get("service_tier") != "default":
+    if (obj.get("status") != "completed" or obj.get("model") != cfg["model"] or
+            obj.get("service_tier") not in (None, "default") or
+            (not cfg["custom"] and obj.get("service_tier") != "default")):
         raise ValueError("Incomplete, wrong-model or wrong-service-tier response")
     usage = obj.get("usage", {})
     if (not isinstance(usage, dict) or type(usage.get("input_tokens")) is not int
@@ -312,10 +365,11 @@ def run(root: Path, *, now: datetime | None = None, fetch=None, invoke_model=Non
     if (root / "PAUSED").exists():
         return {"status": "PAUSED", "network_requests": 0, "model_calls": 0}
     base = root / "p2b" / ID
+    cfg = model_config()
     approval = check_approval(base / "owner-approval.json", now)
     seen = previously_seen(root)    # fail closed before claiming any external work
-    if not os.getenv("OPENAI_API_KEY") and invoke_model is None:
-        raise ValueError("OPENAI_API_KEY unavailable; no external requests made")
+    if not os.getenv(cfg["api_key_env"]) and invoke_model is None:
+        raise ValueError("Approved model API key unavailable; no external requests made")
     base.mkdir(parents=True, exist_ok=True)
     claim = base / "attempt.claim"
     # Atomic, durable one-attempt claim BEFORE either source or model request.
@@ -387,22 +441,22 @@ def run(root: Path, *, now: datetime | None = None, fetch=None, invoke_model=Non
             adapter_root = base / "p2a-adapter"
             report_path = "agent/reports/abstract-evidence-v1-" + sha(raw_report)[:12] + ".json"
             _write_once(adapter_root / report_path, raw_report)
-            body = prepare_request(available)
+            body = prepare_request(available, cfg)
             # Assert a conservative budget including a full 1.25x input-cache write charge.
-            estimate = (12000 * max(INPUT_PRICE * 1.25, INPUT_PRICE) +
-                        MAX_OUTPUT_TOKENS * OUTPUT_PRICE) / 1_000_000
+            estimate = (12000 * approval["input_price_usd_per_m"] * 1.25 +
+                        MAX_OUTPUT_TOKENS * approval["output_price_usd_per_m"]) / 1_000_000
             if estimate > min(MAX_COST_USD, approval["max_spend_usd"]):
                 raise ValueError("Cost upper-bound check failed")
             _write_once(base / "model-request.json", body)
             if counts["model_calls"] >= 1:
                 raise ValueError("Model call budget exhausted")
             counts["model_calls"] += 1
-            _record_network(receipts, "MODEL", ENDPOINT, MAX_OUTPUT_TOKENS)
-            raw_model = (invoke_model or _model_get)(body)
+            _record_network(receipts, "MODEL", cfg["endpoint"], MAX_OUTPUT_TOKENS)
+            raw_model = invoke_model(body) if invoke_model is not None else _model_get(body, cfg)
             if not isinstance(raw_model, bytes) or len(raw_model) > 1_000_000:
                 raise ValueError("Invalid model response bytes")
             _write_once(base / "model-response.json", raw_model)
-            decision, usage = parse_response(raw_model)
+            decision, usage = parse_response(raw_model, cfg)
             _write_once(base / "model-decision.json", encoded(decision))
             if decision["decision"] == "ABSTAIN":
                 if decision["proposal"] is not None or decision["reason_code"] not in (
@@ -425,7 +479,7 @@ def run(root: Path, *, now: datetime | None = None, fetch=None, invoke_model=Non
                 raise ValueError("Unexpected model decision")
         result = {"status": status, "id": ID, "selected_dois": [x["doi"] for x in selected],
                   "verified_source_count": len(available), "experiments_executed": 0,
-                  "model": MODEL, "source_query": SEARCH_URL, **counts}
+                  "model": cfg["model"], "model_provider": cfg["provider"], "source_query": SEARCH_URL, **counts}
     except Exception as exc:
         # No retry, including after a network exception; leave immutable evidence intact.
         result = {"status": "STOP_MODEL_OR_PROVENANCE_ERROR", "id": ID,

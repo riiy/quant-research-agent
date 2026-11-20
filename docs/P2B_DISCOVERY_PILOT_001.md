@@ -75,3 +75,20 @@ After explicit final code/model review, an owner must generate the inert approva
 Upon separate authorization of that exact model and merged code revision, the only operator command that can use external resources is quant-p2b --home runtime run. Its one-shot attempt marker is durable before any request. Missing prerequisites and a prior attempt stop; interrupted runs may not be automatically retried. P0/P1 services and historical artifacts remain untouched.
 
 The new P2B_EVIDENCE_ADAPTER_V1 output is an explicitly labeled P1-compatible, DOI/abstract/hash-verified adapter kept under the new P2-B runtime subdirectory. P2-A's needs-human-review result is not a scientific PASS. The model's protocol, economic novelty and point-in-time data feasibility require independent examination.
+
+
+## Custom Responses gateway compatibility — proposed for PR #14 review
+
+The owner reported that their existing LLM client uses a custom HTTPS Responses-compatible gateway, a gateway-specific model alias, and LLM-prefixed environment variables rather than the official direct endpoint. **This is environmental information, not authorization of that model alias or the private gateway's pricing.** Do not hardcode the private gateway URL, key or personal host details in this public repository.
+
+The PR #14 runner now supports two mutually exclusive paths:
+- Direct OpenAI (only when the LLM_* / BASE_URL gateway variables are absent): official fixed model, endpoint and OPENAI_API_KEY.
+- Operator-selected gateway (when BASE_URL and LLM_MODEL are configured): require HTTPS BASE_URL ending exactly in /v1, LLM_API_STYLE=responses, LLM_MODEL, LLM_API_KEY; optional validated LLM_USER_AGENT. Construct endpoint as BASE_URL + /responses; no redirects. Model ID and endpoint must match the separately signed-off local approval JSON exactly.
+
+The local, inert approval template now includes model_api_key_env, model_user_agent and pricing_reference to pin the chosen route. For any custom gateway, input/output USD prices default to zero and pricing_reference is a placeholder. The runner **fails closed** until the owner independently verifies the gateway's current USD billing rates and records a non-placeholder billing evidence reference and UTC verification timestamp. An official underlying model price is NOT a trusted proxy bill, and a model alias can have different routing, fees or feature support. Do not make a test call to the gateway without accounting for that call against the one-call pilot approval.
+
+The gateway model must return a Responses JSON body with status=completed, model equal to the exact approved gateway alias, one output_text JSON string and usage.input_tokens/output_tokens. A gateway may omit service_tier; that is permitted only on the custom gateway route. A model ID rewrite or missing required response fields is a terminal error (no retry), so verify compatibility from existing gateway documentation or already available prior logs before approving the one-shot live attempt. The PR intentionally does not weaken the P2-A scientific review gate.
+
+The owner-provided shell config (if in a .env file rather than exported environment) must be loaded using their normal local secrets process; do not commit or paste keys. Regenerate the owner-approval JSON template **after** final PR review and code checkout because the model_code_sha256 changes when this runner changes. Any old template hash is invalid.
+
+Status: gateway adapter is proposed for code review only, MODEL_GATEWAY_PRICING_NOT_VERIFIED, MODEL_ID_SPECIFIC_APPROVAL_PENDING, REAL_P2B_NOT_RUN.

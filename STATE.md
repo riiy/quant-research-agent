@@ -1,6 +1,6 @@
 # Quant Research Agent — Project State
 
-Last updated: 2026-11-18
+Last updated: 2026-11-20
 
 ## Objective
 
@@ -19,7 +19,7 @@ Last updated: 2026-11-18
 
 ## Current phase
 
-`SOURCE_TO_HYPOTHESIS_RELEVANCE_GATE_V1_PR_REVIEW_PENDING` — PR #8 merged; a user-run real Crossref-to-frozen-test-to-archive cycle completed on 2026-11-18. The specific statistical hypothesis failed all four predeclared gates. **However the selected DOI predicts Monday STOCK returns using weekend CRYPTO returns, whereas the frozen test predicts Monday BTC returns: source-to-test relevance failed.** P1 engineering path was demonstrated; P1 scientific relevance acceptance is not met. P0 manual service test and timer activation were user-reported on 2026-11-17; its seven-day unattended acceptance is still pending.
+`ABSTRACT_EVIDENCE_ENRICHMENT_V1_PR_REVIEW_PENDING` — PR #8 merged; a user-run real Crossref-to-frozen-test-to-archive cycle completed on 2026-11-18. The specific statistical hypothesis failed all four predeclared gates. **However the selected DOI predicts Monday STOCK returns using weekend CRYPTO returns, whereas the frozen test predicts Monday BTC returns: source-to-test relevance failed.** P1 engineering path was demonstrated; P1 scientific relevance acceptance is not met. P0 manual service test and timer activation were user-reported on 2026-11-17; its seven-day unattended acceptance is still pending.
 
 Prior completed milestone: `MVP_CORE_LOOP_ACCEPTED_RESEARCH_ONLY`.
 
@@ -436,7 +436,7 @@ holdout_evaluated: false
 ## SOURCE_TO_HYPOTHESIS_RELEVANCE_GATE_v1 — implementation proposed (2026-11-18)
 
 ```yaml
-current_phase: SOURCE_TO_HYPOTHESIS_RELEVANCE_GATE_V1_PR_REVIEW_PENDING
+current_phase: ABSTRACT_EVIDENCE_ENRICHMENT_V1_PR_REVIEW_PENDING
 source_fit_gate: IMPLEMENTED_OFFLINE_TESTED_AWAITING_CI_AND_REVIEW
 legacy_2026_11_18_doi: 10.1016/j.frl.2025.108661
 legacy_source_fit_decision: REJECT_TARGET_MISMATCH
@@ -457,3 +457,40 @@ The first live P1 study exposed a **scientific source-target mismatch**: predict
 **Original evidence preserved:** `quant-research-loop --home runtime relevance-audit` reads the existing SQLite/P1 Crossref raw responses **offline**, verifies original SHA256 and DOI fields, and creates an immutable, content-addressed separate relevance audit. It **does not modify** the old 15 paper decisions, original Monday report, strategy results or P0 runtime. The real 15-paper audit has not run in this development environment. A synthetic 15-paper mock is **not** proof of real-batch relevance.
 
 **Stopping condition:** The first P1 template is spent. The modified controller safely returns `IDLE_TEMPLATE_SATURATED` after a terminal decision, making zero more Crossref requests for that already-studied template. After PR approval, run one offline real-batch audit; verify report SHA remains pinned and known DOI fails source fit. Stop work on this gate if correct. A new economic mechanism would require a new, separately frozen protocol. P0 service/timer unchanged.
+
+## Real 15-paper source-fit audit completed (user-reported, 2026-11-20)
+
+```yaml
+pr_10: MERGED
+source_fit_negative_gate: ACCEPTED_FOR_KNOWN_MISMATCH_BLOCKING
+audit_count: 15
+audit_reject_target: 1
+audit_reject_market: 1
+audit_needs_human_review: 13
+audit_auto_eligible: 0
+audit_sha256_user_reported: f8870210661224d86a7319989ce460919e1d1d4d38f4c02d2f965f2908e8a399
+prior_report_sha256_user_reverified: d7c5963aa73340c1c8f9d8901c511d74ce0dbd9a8dca33ae04657f59d4d0fe99
+experiments_rerun: false
+network_requests_during_audit: 0
+```
+
+The user provided the complete 13-paper NEEDS_HUMAN_SOURCE_REVIEW list in the project conversation. This is **not 13 eligible hypotheses**. Reason: the first Crossref query captured title metadata but no abstracts; five DOI/title scopes warrant bounded secondary source review, without reopening the previously stopped Monday-BTC experiment.
+
+## DOI-MATCHED ABSTRACT_EVIDENCE_ENRICHMENT_v1 proposed (2026-11-20)
+
+```yaml
+current_phase: ABSTRACT_EVIDENCE_ENRICHMENT_V1_PR_REVIEW_PENDING
+new_source_retrieval: IMPLEMENTED_LOCAL_MOCK_TESTS_ONLY
+real_5_doi_enrichment: NOT_RUN
+prior_monday_btc_study: ARCHIVED_NON_TRADABLE_DO_NOT_RETEST
+p0_timer: USER_REPORTED_ENABLED_PENDING_7_DAY_ACCEPTANCE
+p1_timer: NOT_ENABLED
+holdout_access_allowed: false
+trading_allowed: false
+```
+
+**Why:** source metadata lacked abstracts, so 13 of 15 papers were unresolved even when their titles were clearly irrelevant. `docs/ABSTRACT_EVIDENCE_ENRICHMENT_V1.md` implements an **independent, opt-in, narrow evidence-only subflow**, not another strategy test. It chooses <=5 original DOI-verified title-relevant papers from the already archived 15, asks Crossref DOI-specific work metadata first, and falls back to OpenAlex DOI-verified inverted-index abstract (when available), with exact HTTPS host allowlist, no redirects, <=500kB per response, <=10 calls per day and persistent before-request claims. Raw bytes SHA256 and timestamps stored separately.
+
+The report extracts title/abstract-supported target (BTC vs stocks), predictor (calendar vs lagged crypto/macro), market, timeframe and direction; shows short text spans + field location, explicit uncertainty and why it is related/rejected. **No scientific paper findings, prediction accuracy, or causal support are inferred from a metadata match**. `TOPIC_RELATED_PROTOCOL_REVIEW` is a human research-scope label, NOT permission to run the used BTC-Monday model. Data-source DOI mismatch, unavailable or empty abstract => fail closed; no automatic LLM API, no author-generated code, no backtest, no sealed holdout or broker.
+
+**Tests:** 17 local deterministic tests passed (mock Crossref/OpenAlex, index rebuilding and invalid/missing/mismatch responses, known crypto-weekend->Monday-stock target counterexample, intraday BTC frequency, BTC derivatives market, title-only abstention, immutable report and at-most-once local claims). GitHub CI and user's real DOI enrichment require independent verification. Once five DOI abstracts are inspected and evidence quality is enough for source-fit decisions, **stop scope expansion**. This research project aims at evidence quality and falsification, not perfect literature infrastructure.

@@ -4,6 +4,18 @@ A **research-only** experiment loop: source-grounded hypothesis discovery → pr
 
 **No broker/exchange trading APIs, keys, order generation, live trading or account-simulation permissions.** Neither a profitable backtest nor a passed holdout grants trading permission.
 
+## DOI-matched abstract evidence review (opt-in, PR pending)
+
+This adds only **evidence retrieval and explainable source-to-experiment matching**, not more trading strategies. The existing 15 DOI records and their original Crossref response SHA256 are verified before choosing up to 5 candidate papers. Crossref DOI metadata supplies optional deposited abstracts; OpenAlex's DOI-matched inverted-index abstract is a bounded fallback. The agent archives raw API response bytes, SHA256, source/timestamps and exact scope snippets. Missing or ambiguous evidence goes to human review; no unverified literature claim, LLM call or trading/backtest.
+
+```bash
+quant-research-loop --home runtime evidence-plan --max-papers 5
+# Only after manually reviewing plan: opt-in max 10 network requests, 5 DOI papers
+quant-research-loop --home runtime evidence-enrich --max-papers 5
+```
+
+The original `BTC_WEEKDAY_INFORMATION_v1` is permanently archived (all 4 frozen gates failed). **No result from this command authorizes its rerun.** The new evidence review has no P1 timer and does not change P0, SQLite study state, frozen policy or sealed 2024/2025 samples. See [evidence protocol](docs/ABSTRACT_EVIDENCE_ENRICHMENT_V1.md).
+
 ## Source-to-hypothesis relevance gate — PR pending
 
 The first P1 cycle exposed an **actual scientific mismatch**: the selected DOI predicts Monday **stock** returns from weekend **cryptocurrency** returns, but our experiment predicts **BTC's own** Monday returns from a known weekday dummy. Its archived statistical STOP remains valid for the frozen BTC-Monday question, not as a falsification of the discovered stock-market paper.

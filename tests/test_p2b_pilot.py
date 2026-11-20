@@ -165,5 +165,42 @@ class PilotTests(unittest.TestCase):
         self.assertFalse((self.root / "p2b" / p.ID / "attempt.claim").exists())
 
 
+    def test_p2a_adapter_is_hash_verified_and_awaits_human_review(self):
+        decision = {"decision": "PROPOSE", "proposal": {"doi": D1},
+                    "reason_code": None, "reason": None}
+        def fake_model(body):
+            self.calls.append(("model", p.MODEL))
+            return json.dumps({"status": "completed", "model": p.MODEL, "service_tier": "default",
+                               "usage": {"input_tokens": 1500, "output_tokens": 250},
+                               "output": [{"content": [{"type": "output_text", "text": json.dumps(decision)}]}]}).encode()
+        def review(adapter, report, proposal):
+            verified = p.gate.verified_evidence(adapter, report, D1)
+            self.assertEqual(verified["doi"], D1)
+            self.assertEqual(verified["abstract"], ABSTRACT)
+            self.assertEqual(json.loads((adapter / proposal).read_text())["doi"], D1)
+            return {"status": "NEEDS_HUMAN_PROTOCOL_AND_DATA_REVIEW"}
+        with patch.object(p.gate, "review", side_effect=review):
+            output = p.run(self.root, now=NOW, fetch=self.fetch, invoke_model=fake_model)
+        self.assertEqual(output["status"], "AWAITING_INDEPENDENT_SCIENTIFIC_REVIEW")
+        self.assertEqual(output["experiments_executed"], 0)
+        self.assertEqual(output["network_requests"], 2)
+        self.assertEqual(output["model_calls"], 1)
+
+    def test_selected_doi_without_abstract_is_not_replaced(self):
+        events = []
+        def fetch(url, size):
+            events.append(url)
+            if url == p.SEARCH_URL:
+                return search()
+            if "api.crossref.org" in url:
+                return crossref(abstract=None)
+            return json.dumps({"results": []}).encode()
+        out = p.run(self.root, now=NOW, fetch=fetch, invoke_model=lambda _: self.fail("No model for absent abstract"))
+        self.assertEqual(out["status"], "STOP_INSUFFICIENT_VERIFIED_SOURCE")
+        self.assertEqual(out["network_requests"], 3)
+        self.assertEqual(out["model_calls"], 0)
+        self.assertEqual(len(events), 3)
+
+
 if __name__ == "__main__":
     unittest.main()

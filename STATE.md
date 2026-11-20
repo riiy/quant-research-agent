@@ -546,3 +546,12 @@ Next high-value test, subject to distinct model/source budget approval: independ
 
 
 Next decision: review and freeze the pilot preregistration, then request **distinct explicit user approval** for the precise model and request budget before implementing/running the one-shot adapter. Do not alter P0/P1 active services or reopen archived mechanisms.
+
+
+### Custom LLM gateway mismatch discovered in operator preflight (2026-11-20)
+
+- The owner ran `quant-p2b --home runtime approval-template` on the unmerged P2-B feature branch and reported a local Responses-compatible gateway with a different model alias and LLM_* environment variables.
+- The original P2-B runner was hardcoded for the direct OpenAI endpoint and OPENAI_API_KEY, so the original inert template **could not safely be approved unchanged**.
+- PR #14 now proposes a minimal exact-endpoint/model-alias gateway adapter; the code refuses any external request until the chosen gateway/model is frozen in a new approval document.
+- Gateway actual billing rates and exact routed model are **UNVERIFIED**, despite public OpenAI prices. Custom gateway templates intentionally contain zero rates/placeholder billing evidence and are not runnable until independently completed and approved.
+- No gateway/model/network calls have been made. P2-B scientific status remains `NOT_RUN`.

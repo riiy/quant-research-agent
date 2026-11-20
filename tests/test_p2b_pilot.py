@@ -202,5 +202,76 @@ class PilotTests(unittest.TestCase):
         self.assertEqual(len(events), 3)
 
 
+    def test_gateway_requires_explicit_billing_proof_before_any_call(self):
+        env = {"BASE_URL": "https://gateway.example.test:9443/v1",
+               "LLM_MODEL": "chatgpt/gpt-6.1-sol", "LLM_API_STYLE": "responses",
+               "LLM_API_KEY": "fake-only-for-mocked-tests", "LLM_USER_AGENT": "curl/8.5.0"}
+        with patch.dict(os.environ, env, clear=True):
+            self.approval = p.approval_template()
+            self.approval["approved"] = True
+            self.approval["approval_reference"] = "operator-reviewed-specific-gateway-model-proposal"
+            self.approval["approved_at_utc"] = "2026-11-20T12:30:00Z"
+            self.approval["pricing_verified_at_utc"] = "2026-11-20T12:30:00Z"
+            self.store_approval()
+            self.assertEqual(self.approval["model_provider"], "openai_compatible_gateway")
+            self.assertEqual(self.approval["endpoint"], "https://gateway.example.test:9443/v1/responses")
+            self.assertEqual(self.approval["input_price_usd_per_m"], 0.0)
+            with self.assertRaisesRegex(ValueError, "rates"):
+                p.run(self.root, now=NOW, fetch=self.fetch, invoke_model=self.model)
+            self.assertEqual(self.calls, [])
+            self.assertFalse((self.root / "p2b" / p.ID / "attempt.claim").exists())
+
+    def test_gateway_explicit_rates_alias_and_no_service_tier(self):
+        env = {"BASE_URL": "https://gateway.example.test:9443/v1",
+               "LLM_MODEL": "chatgpt/gpt-6.1-sol", "LLM_API_STYLE": "responses",
+               "LLM_API_KEY": "fake-only-for-mocked-tests", "LLM_USER_AGENT": "curl/8.5.0"}
+        with patch.dict(os.environ, env, clear=True):
+            self.approval = p.approval_template()
+            self.approval.update({"approved": True,
+                                  "approval_reference": "operator-reviewed-specific-gateway-model-proposal",
+                                  "approved_at_utc": "2026-11-20T12:30:00Z",
+                                  "pricing_verified_at_utc": "2026-11-20T12:30:00Z",
+                                  "pricing_reference": "operator-verified gateway billing dashboard 2026-11-20",
+                                  "input_price_usd_per_m": 2.0,
+                                  "output_price_usd_per_m": 10.0})
+            self.store_approval()
+            def model(body):
+                self.assertIn(b'"model":"chatgpt/gpt-6.1-sol"', body)
+                self.assertNotIn(b'"service_tier"', body)
+                self.assertLessEqual(len(body), p.MAX_INPUT_BYTES)
+                response = json.loads(abstain_response())
+                response["model"] = "chatgpt/gpt-6.1-sol"
+                response.pop("service_tier")
+                return json.dumps(response).encode()
+            output = p.run(self.root, now=NOW, fetch=self.fetch, invoke_model=model)
+        self.assertEqual(output["status"], "NO_NEW_FEASIBLE_MECHANISM")
+        self.assertEqual(output["network_requests"], 2)
+        self.assertEqual(output["model_calls"], 1)
+        self.assertEqual(output["model"], "chatgpt/gpt-6.1-sol")
+
+    def test_gateway_drift_and_bad_style_rejected_before_source_calls(self):
+        env = {"BASE_URL": "https://gateway.example.test:9443/v1",
+               "LLM_MODEL": "chatgpt/gpt-6.1-sol", "LLM_API_STYLE": "responses",
+               "LLM_API_KEY": "fake-only-for-mocked-tests"}
+        with patch.dict(os.environ, env, clear=True):
+            self.approval = p.approval_template()
+            self.approval.update({"approved": True,
+                                  "approval_reference": "operator-reviewed-specific-gateway-model-proposal",
+                                  "approved_at_utc": "2026-11-20T12:30:00Z",
+                                  "pricing_verified_at_utc": "2026-11-20T12:30:00Z",
+                                  "pricing_reference": "operator-verified gateway billing dashboard 2026-11-20",
+                                  "input_price_usd_per_m": 2.0,
+                                  "output_price_usd_per_m": 10.0})
+            self.store_approval()
+            with patch.dict(os.environ, {"LLM_MODEL": "chatgpt/different-model"}):
+                with self.assertRaisesRegex(ValueError, "policy drift"):
+                    p.run(self.root, now=NOW, fetch=self.fetch, invoke_model=self.model)
+            with patch.dict(os.environ, {"LLM_API_STYLE": "chat_completions"}):
+                with self.assertRaisesRegex(ValueError, "Gateway requires"):
+                    p.run(self.root, now=NOW, fetch=self.fetch, invoke_model=self.model)
+        self.assertEqual(self.calls, [])
+        self.assertFalse((self.root / "p2b" / p.ID / "attempt.claim").exists())
+
+
 if __name__ == "__main__":
     unittest.main()

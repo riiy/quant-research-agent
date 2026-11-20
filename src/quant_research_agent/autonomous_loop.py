@@ -380,6 +380,10 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--policy", type=Path, required=True)
     cmds.add_parser("status", help="Inspect durable evidence and study outcomes")
     cmds.add_parser("relevance-audit", help="Offline source fit audit of existing Crossref records; no studies or HTTP")
+    p = cmds.add_parser("evidence-plan", help="Offline DOI-verified plan for <=5 abstracts; no network")
+    p.add_argument("--max-papers", type=int, default=5)
+    e = cmds.add_parser("evidence-enrich", help="Opt-in <=5 Crossref/OpenAlex DOI abstracts; never backtests")
+    e.add_argument("--max-papers", type=int, default=5)
     args = parser.parse_args(argv)
     try:
         if args.command == "cycle":
@@ -387,10 +391,13 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "relevance-audit":
             from .source_fit_audit import audit_existing
             output = audit_existing(args.home)
+        elif args.command in ("evidence-plan", "evidence-enrich"):
+            from .abstract_evidence import plan, enrich
+            output = plan(args.home, args.max_papers) if args.command == "evidence-plan" else enrich(args.home, args.max_papers)
         else:
             output = status(args.home)
         print(json.dumps(output, ensure_ascii=False, sort_keys=True, indent=2))
-        if args.command in ("status", "relevance-audit"):
+        if args.command in ("status", "relevance-audit", "evidence-plan", "evidence-enrich"):
             return 0
         return 1 if output["status"].startswith(("FAILED_", "STOP_", "INTERRUPTED_")) else 0
     except (OSError, ValueError, sqlite3.Error, RuntimeError) as exc:

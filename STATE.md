@@ -19,7 +19,7 @@ Last updated: 2026-11-20
 
 ## Current phase
 
-`P2_AUTONOMOUS_MECHANISM_DISCOVERY_V1_GATE_PR_PENDING` — PR #8 merged; a user-run real Crossref-to-frozen-test-to-archive cycle completed on 2026-11-18. The specific statistical hypothesis failed all four predeclared gates. **However the selected DOI predicts Monday STOCK returns using weekend CRYPTO returns, whereas the frozen test predicts Monday BTC returns: source-to-test relevance failed.** P1 engineering path was demonstrated; P1 scientific relevance acceptance is not met. P0 manual service test and timer activation were user-reported on 2026-11-17; its seven-day unattended acceptance is still pending.
+`P2_A_OFFLINE_PROTOCOL_GATE_MERGED_P2_B_PROPOSED` — PR #8 merged; a user-run real Crossref-to-frozen-test-to-archive cycle completed on 2026-11-18. The specific statistical hypothesis failed all four predeclared gates. **However the selected DOI predicts Monday STOCK returns using weekend CRYPTO returns, whereas the frozen test predicts Monday BTC returns: source-to-test relevance failed.** P1 engineering path was demonstrated; P1 scientific relevance acceptance is not met. P0 manual service test and timer activation were user-reported on 2026-11-17; its seven-day unattended acceptance is still pending.
 
 Prior completed milestone: `MVP_CORE_LOOP_ACCEPTED_RESEARCH_ONLY`.
 
@@ -509,7 +509,7 @@ The previous headings with PR_REVIEW_PENDING, NOT_RUN and source-fit awaiting CI
 
 Proposed P2-A feature branch: feat/p2-offline-mechanism-protocol-gate-v1; see docs/AUTONOMOUS_MECHANISM_DISCOVERY_V1.md.
 
-- status: P2_A_OFFLINE_PROTOCOL_GATE_PR_REVIEW_PENDING
+- status: P2_A_OFFLINE_PROTOCOL_GATE_MERGED_CI_PASSED
 - model_inference: NOT_IMPLEMENTED_AND_NOT_AUTHORIZED
 - real_autonomous_mechanism_discovery: NOT_DEMONSTRATED
 - real_P2_source_review: NOT_RUN
@@ -522,3 +522,16 @@ Proposed P2-A feature branch: feat/p2-offline-mechanism-protocol-gate-v1; see do
 The P2-A gate consumes SHA-verified P1 abstract reports and an untrusted, externally authored proposal JSON; it checks source quote binding, known archived channels, target mismatch, dataset/timestamp disclosures, preregistration completeness and fixed zero-cost/no-execution budget, then archives a review-only report. It does NOT choose or reason over new papers or call a model. Synthetic fixture tests are engineering evidence only.
 
 Next high-value test, subject to distinct model/source budget approval: independently select 1–3 previously unseen real sources, let a bounded LLM generate one mechanism plus falsifier without a human choosing the mechanism, run the offline gate and independent scientific review. **Stop or abstain if source grounding, novelty or point-in-time feasibility fail.** Do not add a generic multi-agent framework, enable new systemd units or merge this PR automatically.
+
+## P2-B first real autonomous discovery pilot — preregistration proposal (2026-11-20)
+
+- GitHub PR #12 merged: 2026-11-20 07:44:40 UTC.
+- Verified main merge commit: `f3a8b6d4700044458b2f67c5a04ab603f41e0014`.
+- P2-A evidence-bound offline reviewer is merged; it **does not make model calls, select new papers or approve a protocol for execution**.
+- `P2B_DISCOVERY_PILOT_001` is now **PROPOSED_ONLY / NOT_AUTHORIZED / NOT_RUN**. Frozen proposed protocol: `docs/P2B_DISCOVERY_PILOT_001.md` on a dedicated PR branch.
+- Critical minimum missing adapter: independently sampled up-to-three new Crossref DOIs and verified abstracts must be presented in the P2-A immutable-evidence report contract. The old P1 DOI enrichment ranks calendar papers and cannot serve as the independent selector.
+- One new search request + up to six DOI verifications and one separately approved model inference are proposed, **not** yet licensed. Model provider/ID/endpoint and verified worst-case spend cap remain unset, so zero external P2-B calls are allowed.
+- Proposed pilot outcome is either an independent scientifically reviewed protocol, abstention, or a source/model/provenance STOP. No automatic strategy experiment, trading, account simulation, sealed holdout, generated-code execution or timer changes.
+- Scientific outcome: `NOT_RUN`; P2-B autonomous mechanism discovery acceptance: `NOT_MET`.
+
+Next decision: review and freeze the pilot preregistration, then request **distinct explicit user approval** for the precise model and request budget before implementing/running the one-shot adapter. Do not alter P0/P1 active services or reopen archived mechanisms.

@@ -348,14 +348,18 @@ def run(root: Path, *, now: datetime | None = None, fetch=None, invoke_model=Non
             for prov, url in (("Crossref", cref), ("OpenAlex", alex)):
                 raw = source(url)
                 # Require provider DOI identity and title scope before treating as evidence.
+                # Archive every raw provider response BEFORE interpretation, including failed identity checks.
+                fn = "raw-" + sha(paper["doi"].encode())[:12] + "-" + prov.lower() + ".json"
+                _write_once(base / fn, raw)
                 txt, title = (ae.crossref_abstract(raw, paper["doi"]) if prov == "Crossref" else
                               ae.openalex_abstract(raw, paper["doi"]))
+                # A legitimate empty OpenAlex result is an absence of evidence, not a fabricated mismatch.
+                if prov == "OpenAlex" and not title and not txt:
+                    break
                 ours = set(re.findall(r"[a-z0-9]+", paper["title"].lower()))
                 theirs = set(re.findall(r"[a-z0-9]+", title.lower()))
                 if not title or not ours or len(ours & theirs) / len(ours) < 0.5:
                     raise ValueError("DOI-specific title mismatch")
-                fn = "raw-" + sha(paper["doi"].encode())[:12] + "-" + prov.lower() + ".json"
-                _write_once(base / fn, raw)
                 if txt:
                     abstract, provider, evidence_raw = txt, prov, (fn, raw)
                     break

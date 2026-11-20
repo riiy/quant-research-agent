@@ -19,7 +19,7 @@ Last updated: 2026-11-20
 
 ## Current phase
 
-`ABSTRACT_EVIDENCE_ENRICHMENT_V1_PR_REVIEW_PENDING` — PR #8 merged; a user-run real Crossref-to-frozen-test-to-archive cycle completed on 2026-11-18. The specific statistical hypothesis failed all four predeclared gates. **However the selected DOI predicts Monday STOCK returns using weekend CRYPTO returns, whereas the frozen test predicts Monday BTC returns: source-to-test relevance failed.** P1 engineering path was demonstrated; P1 scientific relevance acceptance is not met. P0 manual service test and timer activation were user-reported on 2026-11-17; its seven-day unattended acceptance is still pending.
+`P2_AUTONOMOUS_MECHANISM_DISCOVERY_V1_GATE_PR_PENDING` — PR #8 merged; a user-run real Crossref-to-frozen-test-to-archive cycle completed on 2026-11-18. The specific statistical hypothesis failed all four predeclared gates. **However the selected DOI predicts Monday STOCK returns using weekend CRYPTO returns, whereas the frozen test predicts Monday BTC returns: source-to-test relevance failed.** P1 engineering path was demonstrated; P1 scientific relevance acceptance is not met. P0 manual service test and timer activation were user-reported on 2026-11-17; its seven-day unattended acceptance is still pending.
 
 Prior completed milestone: `MVP_CORE_LOOP_ACCEPTED_RESEARCH_ONLY`.
 
@@ -436,8 +436,8 @@ holdout_evaluated: false
 ## SOURCE_TO_HYPOTHESIS_RELEVANCE_GATE_v1 — implementation proposed (2026-11-18)
 
 ```yaml
-current_phase: ABSTRACT_EVIDENCE_ENRICHMENT_V1_PR_REVIEW_PENDING
-source_fit_gate: IMPLEMENTED_OFFLINE_TESTED_AWAITING_CI_AND_REVIEW
+current_phase: P1_SOURCE_FIT_AUDIT_COMPLETED_REAL_15_PAPERS
+source_fit_gate: MERGED_PR10_REAL_15_PAPER_AUDIT_COMPLETED
 legacy_2026_11_18_doi: 10.1016/j.frl.2025.108661
 legacy_source_fit_decision: REJECT_TARGET_MISMATCH
 original_monday_study_status: STOP_INSUFFICIENT_INCREMENTAL_INFORMATION
@@ -479,9 +479,9 @@ The user provided the complete 13-paper NEEDS_HUMAN_SOURCE_REVIEW list in the pr
 ## DOI-MATCHED ABSTRACT_EVIDENCE_ENRICHMENT_v1 proposed (2026-11-20)
 
 ```yaml
-current_phase: ABSTRACT_EVIDENCE_ENRICHMENT_V1_PR_REVIEW_PENDING
+current_phase: P1_ABSTRACT_EVIDENCE_REAL_5_PAPER_REVIEW_COMPLETED
 new_source_retrieval: IMPLEMENTED_LOCAL_MOCK_TESTS_ONLY
-real_5_doi_enrichment: NOT_RUN
+real_5_doi_enrichment: USER_REPORTED_COMPLETED_2026_11_20
 prior_monday_btc_study: ARCHIVED_NON_TRADABLE_DO_NOT_RETEST
 p0_timer: USER_REPORTED_ENABLED_PENDING_7_DAY_ACCEPTANCE
 p1_timer: NOT_ENABLED
@@ -494,3 +494,31 @@ trading_allowed: false
 The report extracts title/abstract-supported target (BTC vs stocks), predictor (calendar vs lagged crypto/macro), market, timeframe and direction; shows short text spans + field location, explicit uncertainty and why it is related/rejected. **No scientific paper findings, prediction accuracy, or causal support are inferred from a metadata match**. `TOPIC_RELATED_PROTOCOL_REVIEW` is a human research-scope label, NOT permission to run the used BTC-Monday model. Data-source DOI mismatch, unavailable or empty abstract => fail closed; no automatic LLM API, no author-generated code, no backtest, no sealed holdout or broker.
 
 **Tests:** 17 local deterministic tests passed (mock Crossref/OpenAlex, index rebuilding and invalid/missing/mismatch responses, known crypto-weekend->Monday-stock target counterexample, intraday BTC frequency, BTC derivatives market, title-only abstention, immutable report and at-most-once local claims). GitHub CI and user's real DOI enrichment require independent verification. Once five DOI abstracts are inspected and evidence quality is enough for source-fit decisions, **stop scope expansion**. This research project aims at evidence quality and falsification, not perfect literature infrastructure.
+
+
+## 2026-11-20 P1 closeout / P2-A offline gate proposal (unmerged)
+
+The previous headings with PR_REVIEW_PENDING, NOT_RUN and source-fit awaiting CI represent obsolete pre-merge statements. Current external evidence supplied by the owner is newer:
+
+- PRs #7–#11 are merged on main f61499d7d17b681ee5db322c12a28372d06f9853.
+- Real 15-paper source-fit audit: 1 target mismatch, 1 market mismatch, 13 needs human source review, no studies rerun.
+- Real 5-paper abstract evidence batch: 2 NEEDS_HUMAN_SOURCE_REVIEW, 2 REJECT_FREQUENCY_MISMATCH, 1 TOPIC_RELATED_PROTOCOL_REVIEW; 8 network requests, zero experiment executions.
+- Real evidence report: runtime/agent/reports/abstract-evidence-v1-34ec01bb674b.json; digest 34ec01bb674b7cc95a0de50349f511b053618ba8deb08cc0fc67df254a4ab027.
+- P0 seven real consecutive UTC day unattended gate still **UNVERIFIED**; timer activation user-reported.
+- BTC_WEEKDAY_INFORMATION_v1 remains archived STOP. No paper reclassification is permission to rerun it.
+
+Proposed P2-A feature branch: feat/p2-offline-mechanism-protocol-gate-v1; see docs/AUTONOMOUS_MECHANISM_DISCOVERY_V1.md.
+
+- status: P2_A_OFFLINE_PROTOCOL_GATE_PR_REVIEW_PENDING
+- model_inference: NOT_IMPLEMENTED_AND_NOT_AUTHORIZED
+- real_autonomous_mechanism_discovery: NOT_DEMONSTRATED
+- real_P2_source_review: NOT_RUN
+- experiment_execution: DISABLED
+- scientific_acceptance: NOT_MET
+- trading_allowed: false
+- account_simulation_allowed: false
+- sealed_holdout_access_allowed: false
+
+The P2-A gate consumes SHA-verified P1 abstract reports and an untrusted, externally authored proposal JSON; it checks source quote binding, known archived channels, target mismatch, dataset/timestamp disclosures, preregistration completeness and fixed zero-cost/no-execution budget, then archives a review-only report. It does NOT choose or reason over new papers or call a model. Synthetic fixture tests are engineering evidence only.
+
+Next high-value test, subject to distinct model/source budget approval: independently select 1–3 previously unseen real sources, let a bounded LLM generate one mechanism plus falsifier without a human choosing the mechanism, run the offline gate and independent scientific review. **Stop or abstain if source grounding, novelty or point-in-time feasibility fail.** Do not add a generic multi-agent framework, enable new systemd units or merge this PR automatically.

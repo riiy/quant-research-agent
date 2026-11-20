@@ -17,6 +17,7 @@ quant-funding-kill = "quant_research_agent.funding_mechanism:main"
 quant-attention-kill = "quant_research_agent.attention_kill_test:main"
 quant-orchestrator = "quant_research_agent.orchestrator:main"
 quant-research-loop = "quant_research_agent.autonomous_loop:main"
+quant-mechanism = "quant_research_agent.mechanism_discovery:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -563,3 +563,31 @@ Next decision: review and freeze the pilot preregistration, then request **disti
 - PR #14 fixture tests now pin exact alias; gateway adapter in runner source is already driven by `LLM_MODEL` and `BASE_URL`, so no further hardcoded model/endpoint wiring is necessary.
 - Budget and scientific scope unchanged: up to 7 external DOI evidence requests, max 1 approved model call, total cap US$10, no retry/study code/backtest/trading/simulation/tickets/holdout.
 - Owner retains separate review/merge of PR #14 and local one-shot approval-document requirement; no real outbound run performed. `P2B_REAL_DISCOVERY_NOT_RUN`.
+
+## 2026-11-21 P2B_DISCOVERY_PILOT_001 — terminal first real attempt (owner-reported)
+
+- Owner ran the explicit one-shot P2-B pilot on the host after PR #14 merged (`9bcaa35ff3b0f9580047409b2e85daf21c188cdc`).
+- Report: `runtime/p2b/P2B_DISCOVERY_PILOT_001/result-bf07acbb0d83.json`; owner-reported SHA256 `bf07acbb0d831fa4893209eee3bb00073e52debf1c1b33ac6ad13cfe9e98e66e` (not independently rehashed).
+- Outcome: `STOP_MODEL_OR_PROVENANCE_ERROR`; `HTTPError 400 Bad Request`; 4 source HTTP requests counted, 1 model HTTP attempt counted, 0 scientific experiments.
+- At least one new DOI abstract passed runner verification because the model request was only issued after that check. Actual DOI list, model request body and returned gateway error details were not provided.
+- Model request was **not accepted successfully** (HTTP 400). Model usage/billing, generated mechanism, source relevance and scientific novelty **UNKNOWN**. This is a protocol/interface STOP, not a negative/positive mechanism discovery result.
+- **Terminal:** `attempt.claim` must remain untouched; repeat execution or altered settings with this ID are forbidden. The once-approved model-call attempt is consumed. `P2B_SCIENTIFIC_ACCEPTANCE=NOT_MET`; trading, account simulation, sealed holdout and generated-code experiments remain disabled.
+- Narrowest next action: read only the existing local `model-request.json` and any previously retained gateway error logs; redact sensitive content. The current runner drops the HTTPError response JSON, so the exact bad parameter is presently unknown. No new HTTP probes, model calls, or strategy research are authorized.
+- Scientific/engineering postmortem proposal: `docs/P2B_DISCOVERY_PILOT_001_POSTMORTEM.md` in a separately reviewed docs PR. Re-evaluate a **different** pilot only if independent existing error evidence identifies a concrete, inexpensive compatibility repair. Otherwise STOP / archive.
+
+## 2026-11-21 P2B first-attempt gateway log root cause confirmed (owner-supplied)
+
+- Existing LiteLLM Proxy logs for `P2B_DISCOVERY_PILOT_001` explicitly state: `/responses: Invalid model name passed in model=chatgpt/gpt6.2-sol`. The owner confirms the actual available gateway route is `chatgpt/gpt6.1-sol`.
+- **Root cause resolved**: HTTP 400 was caused by invalid/unavailable gateway model alias. Earlier assertions that `chatgpt/gpt6.2-sol` was routed and that error cause was unknown are **superseded**, not silently overwritten. Neither strict-schema nor reasoning-parameter incompatibility has been demonstrated.
+- The one model HTTP attempt was rejected at routing; there is no model-generated mechanism or scientific verdict. Billing for the rejected request is not established.
+- `P2B_DISCOVERY_PILOT_001` stays `STOP_MODEL_OR_PROVENANCE_ERROR / FROZEN`; preserve `attempt.claim`, hashes, source selection and request. No retries or old-ID model substitutions.
+- Recommendation: **if owner separately authorizes**, preregister a minimal `P2B_DISCOVERY_PILOT_002` for exact `chatgpt/gpt6.1-sol`, independently verify price, reuse hash-verified immutable DOI evidence from first run without a new selective search, one new model call and explicit stop conditions. This is a new approval and has **NOT** been started.
+- Current scientific status: `P2B_SCIENTIFIC_ACCEPTANCE_NOT_MET`. No trading, backtesting, simulation, tickets, sealed holdout or generated-code execution authorized.
+
+## 2026-11-21 LiteLLM model_list correction — newer source supersedes earlier interpretation
+
+- Owner supplied LiteLLM proxy YAML showing `model_info.mode=responses` and matching `model_name` / `litellm_params.model` for exactly: `chatgpt/gpt-6.2-sol`, `chatgpt/gpt-6.1-sol`, `chatgpt/gpt-6-luna`.
+- The actual P2B-001 HTTP 400 request used **`chatgpt/gpt6.2-sol`**, which omits the hyphen in `gpt-6.2` and does **not** match the configured `chatgpt/gpt-6.2-sol`.
+- **Supersedes older alias claims**: previous `chatgpt/gpt6.1-sol` is also not an exact configured `model_name`. The minimally corrected model for a possible new P2B-002 is `chatgpt/gpt-6.2-sol` (rather than changing to 6.1).
+- Configuration-as-shared is not independent proof that the running LiteLLM proxy has loaded it or that the operator key can access the exact alias. Check existing proxy startup/key-policy records before any new separately approved invocation.
+- First pilot stays `STOP_MODEL_OR_PROVENANCE_ERROR / FROZEN`; preserve request hash, `attempt.claim`, and immutable evidence; zero retry permission, zero scientific outcome. No model/network call made by this correction. New P2B-002 remains `NOT_AUTHORIZED`.

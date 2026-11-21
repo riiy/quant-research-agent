@@ -18,6 +18,7 @@ quant-attention-kill = "quant_research_agent.attention_kill_test:main"
 quant-orchestrator = "quant_research_agent.orchestrator:main"
 quant-research-loop = "quant_research_agent.autonomous_loop:main"
 quant-mechanism = "quant_research_agent.mechanism_discovery:main"
+quant-p2b = "quant_research_agent.p2b_pilot:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

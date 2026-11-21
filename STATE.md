@@ -534,4 +534,32 @@ Next high-value test, subject to distinct model/source budget approval: independ
 - Proposed pilot outcome is either an independent scientifically reviewed protocol, abstention, or a source/model/provenance STOP. No automatic strategy experiment, trading, account simulation, sealed holdout, generated-code execution or timer changes.
 - Scientific outcome: `NOT_RUN`; P2-B autonomous mechanism discovery acceptance: `NOT_MET`.
 
+### P2-B implementation PR follow-up (2026-11-20, owner approval bounded)
+
+- PR #13 was merged into main at commit `023c4f6acdf3b18e065d76b05509601d9fcf0c71`.
+- The owner explicitly authorized the frozen **source scope** (max 7 Crossref/OpenAlex calls), at most **one** separately approved model call and **US$10 total cap**, with zero retries, model-generated code execution, simulation, trading, order tickets or sealed holdout access.
+- Proposed model identity (not yet separately user-confirmed): OpenAI `gpt-6.2-sol`, Standard, Responses API. Official 2026-11-20 Standard prices: US$2/million input and US$10/million output tokens. 12k/4.5k ceiling implies US$0.069 raw text token price, US$0.075 with a full 1.25x cache-write assumption, subject to operator pricing recheck.
+- Current implementation branch: `feat/p2b-single-shot-discovery-runner`. Status: `P2B_RUNNER_IMPLEMENTATION_PR_PENDING`.
+- Separate final owner approval of model ID, reviewed code SHA256, exact endpoint/query and verified current pricing is required in a local one-time approval file. No model call authorized merely by current source budget approval.
+- Scientific run: `NOT_RUN`; P2-B scientific acceptance: `NOT_MET`.
+- P0/P1 services unchanged; P2-A unchanged; new CLI never executes dynamic research Python.
+
+
 Next decision: review and freeze the pilot preregistration, then request **distinct explicit user approval** for the precise model and request budget before implementing/running the one-shot adapter. Do not alter P0/P1 active services or reopen archived mechanisms.
+
+
+### Custom LLM gateway mismatch discovered in operator preflight (2026-11-20)
+
+- The owner ran `quant-p2b --home runtime approval-template` on the unmerged P2-B feature branch and reported a local Responses-compatible gateway with a different model alias and LLM_* environment variables.
+- The original P2-B runner was hardcoded for the direct OpenAI endpoint and OPENAI_API_KEY, so the original inert template **could not safely be approved unchanged**.
+- PR #14 now proposes a minimal exact-endpoint/model-alias gateway adapter; the code refuses any external request until the chosen gateway/model is frozen in a new approval document.
+- Gateway actual billing rates and exact routed model are **UNVERIFIED**, despite public OpenAI prices. Custom gateway templates intentionally contain zero rates/placeholder billing evidence and are not runnable until independently completed and approved.
+- No gateway/model/network calls have been made. P2-B scientific status remains `NOT_RUN`.
+
+## 2026-11-20 P2-B owner-confirmed gateway alias/pricing
+
+- Latest user-confirmed exact model alias: `chatgpt/gpt6.2-sol`, routed via existing LLM-prefixed HTTPS Responses gateway. Do **not** substitute `chatgpt/gpt-6.1-sol` or `gpt-6.2-sol` into the local gateway model variable.
+- Owner attests gateway pricing matches official GPT-6.2 Sol Standard token charges: US$2/million input and US$10/million output; independent public reference https://developers.openai.com/api/docs/models/gpt-6.2-sol. Charge parity is attested, while actual proxy routing/response model ID/billing remains untested.
+- PR #14 fixture tests now pin exact alias; gateway adapter in runner source is already driven by `LLM_MODEL` and `BASE_URL`, so no further hardcoded model/endpoint wiring is necessary.
+- Budget and scientific scope unchanged: up to 7 external DOI evidence requests, max 1 approved model call, total cap US$10, no retry/study code/backtest/trading/simulation/tickets/holdout.
+- Owner retains separate review/merge of PR #14 and local one-shot approval-document requirement; no real outbound run performed. `P2B_REAL_DISCOVERY_NOT_RUN`.

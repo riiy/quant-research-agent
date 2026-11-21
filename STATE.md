@@ -563,3 +563,14 @@ Next decision: review and freeze the pilot preregistration, then request **disti
 - PR #14 fixture tests now pin exact alias; gateway adapter in runner source is already driven by `LLM_MODEL` and `BASE_URL`, so no further hardcoded model/endpoint wiring is necessary.
 - Budget and scientific scope unchanged: up to 7 external DOI evidence requests, max 1 approved model call, total cap US$10, no retry/study code/backtest/trading/simulation/tickets/holdout.
 - Owner retains separate review/merge of PR #14 and local one-shot approval-document requirement; no real outbound run performed. `P2B_REAL_DISCOVERY_NOT_RUN`.
+
+## 2026-11-21 P2B_DISCOVERY_PILOT_001 — terminal first real attempt (owner-reported)
+
+- Owner ran the explicit one-shot P2-B pilot on the host after PR #14 merged (`9bcaa35ff3b0f9580047409b2e85daf21c188cdc`).
+- Report: `runtime/p2b/P2B_DISCOVERY_PILOT_001/result-bf07acbb0d83.json`; owner-reported SHA256 `bf07acbb0d831fa4893209eee3bb00073e52debf1c1b33ac6ad13cfe9e98e66e` (not independently rehashed).
+- Outcome: `STOP_MODEL_OR_PROVENANCE_ERROR`; `HTTPError 400 Bad Request`; 4 source HTTP requests counted, 1 model HTTP attempt counted, 0 scientific experiments.
+- At least one new DOI abstract passed runner verification because the model request was only issued after that check. Actual DOI list, model request body and returned gateway error details were not provided.
+- Model request was **not accepted successfully** (HTTP 400). Model usage/billing, generated mechanism, source relevance and scientific novelty **UNKNOWN**. This is a protocol/interface STOP, not a negative/positive mechanism discovery result.
+- **Terminal:** `attempt.claim` must remain untouched; repeat execution or altered settings with this ID are forbidden. The once-approved model-call attempt is consumed. `P2B_SCIENTIFIC_ACCEPTANCE=NOT_MET`; trading, account simulation, sealed holdout and generated-code experiments remain disabled.
+- Narrowest next action: read only the existing local `model-request.json` and any previously retained gateway error logs; redact sensitive content. The current runner drops the HTTPError response JSON, so the exact bad parameter is presently unknown. No new HTTP probes, model calls, or strategy research are authorized.
+- Scientific/engineering postmortem proposal: `docs/P2B_DISCOVERY_PILOT_001_POSTMORTEM.md` in a separately reviewed docs PR. Re-evaluate a **different** pilot only if independent existing error evidence identifies a concrete, inexpensive compatibility repair. Otherwise STOP / archive.

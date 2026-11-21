@@ -583,3 +583,11 @@ Next decision: review and freeze the pilot preregistration, then request **disti
 - `P2B_DISCOVERY_PILOT_001` stays `STOP_MODEL_OR_PROVENANCE_ERROR / FROZEN`; preserve `attempt.claim`, hashes, source selection and request. No retries or old-ID model substitutions.
 - Recommendation: **if owner separately authorizes**, preregister a minimal `P2B_DISCOVERY_PILOT_002` for exact `chatgpt/gpt6.1-sol`, independently verify price, reuse hash-verified immutable DOI evidence from first run without a new selective search, one new model call and explicit stop conditions. This is a new approval and has **NOT** been started.
 - Current scientific status: `P2B_SCIENTIFIC_ACCEPTANCE_NOT_MET`. No trading, backtesting, simulation, tickets, sealed holdout or generated-code execution authorized.
+
+## 2026-11-21 LiteLLM model_list correction — newer source supersedes earlier interpretation
+
+- Owner supplied LiteLLM proxy YAML showing `model_info.mode=responses` and matching `model_name` / `litellm_params.model` for exactly: `chatgpt/gpt-6.2-sol`, `chatgpt/gpt-6.1-sol`, `chatgpt/gpt-6-luna`.
+- The actual P2B-001 HTTP 400 request used **`chatgpt/gpt6.2-sol`**, which omits the hyphen in `gpt-6.2` and does **not** match the configured `chatgpt/gpt-6.2-sol`.
+- **Supersedes older alias claims**: previous `chatgpt/gpt6.1-sol` is also not an exact configured `model_name`. The minimally corrected model for a possible new P2B-002 is `chatgpt/gpt-6.2-sol` (rather than changing to 6.1).
+- Configuration-as-shared is not independent proof that the running LiteLLM proxy has loaded it or that the operator key can access the exact alias. Check existing proxy startup/key-policy records before any new separately approved invocation.
+- First pilot stays `STOP_MODEL_OR_PROVENANCE_ERROR / FROZEN`; preserve request hash, `attempt.claim`, and immutable evidence; zero retry permission, zero scientific outcome. No model/network call made by this correction. New P2B-002 remains `NOT_AUTHORIZED`.

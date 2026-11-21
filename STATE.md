@@ -574,3 +574,12 @@ Next decision: review and freeze the pilot preregistration, then request **disti
 - **Terminal:** `attempt.claim` must remain untouched; repeat execution or altered settings with this ID are forbidden. The once-approved model-call attempt is consumed. `P2B_SCIENTIFIC_ACCEPTANCE=NOT_MET`; trading, account simulation, sealed holdout and generated-code experiments remain disabled.
 - Narrowest next action: read only the existing local `model-request.json` and any previously retained gateway error logs; redact sensitive content. The current runner drops the HTTPError response JSON, so the exact bad parameter is presently unknown. No new HTTP probes, model calls, or strategy research are authorized.
 - Scientific/engineering postmortem proposal: `docs/P2B_DISCOVERY_PILOT_001_POSTMORTEM.md` in a separately reviewed docs PR. Re-evaluate a **different** pilot only if independent existing error evidence identifies a concrete, inexpensive compatibility repair. Otherwise STOP / archive.
+
+## 2026-11-21 P2B first-attempt gateway log root cause confirmed (owner-supplied)
+
+- Existing LiteLLM Proxy logs for `P2B_DISCOVERY_PILOT_001` explicitly state: `/responses: Invalid model name passed in model=chatgpt/gpt6.2-sol`. The owner confirms the actual available gateway route is `chatgpt/gpt6.1-sol`.
+- **Root cause resolved**: HTTP 400 was caused by invalid/unavailable gateway model alias. Earlier assertions that `chatgpt/gpt6.2-sol` was routed and that error cause was unknown are **superseded**, not silently overwritten. Neither strict-schema nor reasoning-parameter incompatibility has been demonstrated.
+- The one model HTTP attempt was rejected at routing; there is no model-generated mechanism or scientific verdict. Billing for the rejected request is not established.
+- `P2B_DISCOVERY_PILOT_001` stays `STOP_MODEL_OR_PROVENANCE_ERROR / FROZEN`; preserve `attempt.claim`, hashes, source selection and request. No retries or old-ID model substitutions.
+- Recommendation: **if owner separately authorizes**, preregister a minimal `P2B_DISCOVERY_PILOT_002` for exact `chatgpt/gpt6.1-sol`, independently verify price, reuse hash-verified immutable DOI evidence from first run without a new selective search, one new model call and explicit stop conditions. This is a new approval and has **NOT** been started.
+- Current scientific status: `P2B_SCIENTIFIC_ACCEPTANCE_NOT_MET`. No trading, backtesting, simulation, tickets, sealed holdout or generated-code execution authorized.

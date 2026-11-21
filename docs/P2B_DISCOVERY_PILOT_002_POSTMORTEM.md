@@ -59,3 +59,13 @@ Independent public archive warning: Binance public-data issue #334 (https://gith
 ### Second deterministic contract mismatch visible without rerunning P2-A
 
 The supplied proposal sets `novelty.closest_archived` to the free-text explanation “Perpetual funding/leverage pressure; BTC Monday/weekday calendar is the closest proxy-level analogue.” P2-A `validate()` requires exact membership in its canonical `ARCHIVED` identifiers (such as `derivatives_leverage_pressure` or `calendar_weekday`), not a composite narrative. Therefore, after the first availability string failure, **a second gate validation error would occur** at the closest-archived check. The original P2-B response schema likewise declares `closest_archived` as an unrestricted string. This demonstrates at least two producer/consumer enum mismatches; there is no reason to consume another model call or to alter the frozen proposal just for a green CI status. Independently reviewing the economic difference remains possible without pretending it passed P2-A.
+
+## Owner final kill decision (2026-11-21)
+
+**Final status for `perp_clock_phase_spot_adjustment`: `ARCHIVED_BLOCKED_DATA_NOT_AVAILABLE`.**
+
+The owner explicitly confirms the predeclared minimum feasibility conditions were not met for the read-only inventory: existing paired 2024 Binance spot/USDM BTCUSDT append-only BBO updates, common receiver timestamps, gap checks and >=30 eligible evaluation UTC days. We do not claim an independent host inventory; the owner did not enumerate which individual prerequisites were missing.
+
+This closes the scientific candidate **without execution** and overrides the preceding provisional "if the data exist" next step. Do not run experiments or request new models, collect/reconstruct high-frequency books, retune dates/phases or loosen data standards to rescue it. Preserve the P2B-002 terminal state and raw model output unchanged. An economically plausible idea is not a feasible validated protocol. The P2-A enum mismatches are retained only as interface QA findings, not authorization to start P2B-003.
+
+Future reopening requires genuinely new independent evidence of a preexisting compliant dual-feed dataset and a separate owner authorization; otherwise STOP.
